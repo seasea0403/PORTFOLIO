@@ -1,0 +1,14 @@
+[2026-08-12T13:17:35.436Z] [INIT] Deep Copilot debug log started. file=d:\Desktop\project\PORTFOLIO\.deep-copilot\logs\session-2026-08-12T13-17-35-435Z.log
+[2026-08-12T13:17:35.436Z] [ACTIVATE] {"version":"0.43.1"}
+[2026-08-12T13:17:35.436Z] [PROVIDERS_LOADED] {"count":4,"ids":["anthropic","custom","deepseek","openai"]}
+[2026-08-12T13:17:35.436Z] [TERMINAL_MONITOR_STARTED] {}
+[2026-08-12T13:17:35.436Z] [STATUSBAR_REGISTERED] {"id":"deepseekAgent.statusBar"}
+[2026-08-12T13:17:35.439Z] [INLINE_COMPLETION_REGISTERED]
+[2026-08-12T13:18:14.226Z] [USER_SEND] {"sid":"s_mrqpo4rb_4f25","len":80,"model":"deepseek-v4-pro","baseUrl":"","mode":"manual","text":"D:\\Desktop\\project\\PORTFOLIO\\assets\\art\\IP我希望把这个文件下的每个子文件夹把文件夹的图片的名字都按照12345依次排列"}
+[2026-08-12T13:18:14.228Z] [INTERACTION_MODE] {"mode":"agent"}
+[2026-08-12T13:18:14.229Z] [TIKTOKEN_UNAVAILABLE] {"reason":"Cannot find module 'js-tiktoken'\nRequire stack:\n- c:\\Users\\30407\\.vscode\\extensions\\zhouchaunge.deep-copilot-0.43.1\\out\\extension.js\n- d:\\小番茄C盘清理软件搬家目录\\Microsoft Visual Studio Code (User)\\Microsoft VS Code\\df53daabb1\\resources\\app\\out\\vs\\workbench\\api\\node\\extensionHostProcess.js"}
+[2026-08-12T13:18:14.230Z] [ITER_START] {"sid":"s_mrqpo4rb_4f25","iter":1,"msg_count":44,"est_tokens":25325}
+[2026-08-12T13:18:14.231Z] [HTTP_REQUEST] {"url":"https://api.deepseek.com","model":"deepseek-v4-pro","msg_count":44}
+[2026-08-12T13:18:17.146Z] [HTTP_ERROR] {"status":402,"body":"{\"message\":\"Insufficient Balance\",\"type\":\"unknown_error\",\"param\":null,\"code\":\"invalid_request_error\"}"}
+[2026-08-12T13:18:17.146Z] [LOOP_ERROR] {"sid":"s_mrqpo4rb_4f25","message":"API 402: 402 Insufficient Balance\n\n{\"message\":\"Insufficient Balance\",\"type\":\"unknown_error\",\"param\":null,\"code\":\"invalid_request_error\"}","stack":"Error: API 402: 402 Insufficient Balance\n\n{\"message\":\"Insufficient Balance\",\"type\":\"unknown_error\",\"param\":null,\"code\":\"invalid_request_error\"}\n\tat q (c:\\Users\\30407\\.vscode\\extensions\\zhouchaunge.deep-copilot-0.43.1\\out\\extension.js:394:4336)\n\tat yU (c:\\Users\\30407\\.vscode\\extensions\\zhouchaunge.deep-copilot-0.43.1\\out\\extension.js:396:622)\n\tat process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n\tat async hA.handleSend (c:\\Users\\30407\\.vscode\\extensions\\zhouchaunge.deep-copilot-0.43.1\\out\\extension.js:581:2579)"}
+[2026-08-12T13:18:17.146Z] [SEND_END] {"sid":"s_mrqpo4rb_4f25","iters":0,"asst_chars":0}

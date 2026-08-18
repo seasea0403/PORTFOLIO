@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio</title>
+<style>
+/* ============================================================
+ * 复古拼贴剪贴 · 晾衣绳主题 作品集首页
+ * 素材画布统一为 3780 × 2126，所有图层完全重叠对齐。
+ * 交互热区为独立的小矩形，只覆盖衣物实体图形范围。
+ * ============================================================ */
+
+/* ---------- 基础 ---------- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2e74e4; /* 与「蓝色背景.png」主色一致，填充舞台外的留白 */
+  overflow: hidden;
+}
+
+/* ---------- 舞台：保持 3780:2126 比例，整体缩放适配视口 ---------- */
+.stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 3780 / 2126));
+  aspect-ratio: 3780 / 2126;
+  overflow: hidden; /* 防止水波纹溢出舞台 */
+}
+
+/* ---------- 图层：背景 → 标题 → 物件1~5，全部完全重叠 ---------- */
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* 关键：整张大画布不接收任何鼠标事件 */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 各物件图层的旋转中心设在衣物实体图形的中心（画布百分比），
+   避免围绕画布中心旋转导致抖动幅度被放大 */
+#layer-1 { transform-origin: 23.5% 51.8%; transform: translateX(1.5%); }
+#layer-2 { transform-origin: 49.1% 58.3%; transform: translateX(1%); }
+#layer-3 { transform-origin: 36.1% 50.6%; transform: translateX(0); }
+#layer-4 { transform-origin: 74.8% 39.9%; transform: translateX(-1%); }
+#layer-5 { transform-origin: 64.7% 60.4%; transform: translateX(-1.5%); }
+
+/* ---------- 风吹草动动画：0.45s 循环，位移±3px / 旋转±1.2deg / scale 1.02 ---------- */
+@keyframes sway {
+  0%   { transform: translate(0, 0)        rotate(0deg)    scale(1);    }
+  25%  { transform: translate(2px, -3px)   rotate(1.2deg)  scale(1.02); }
+  50%  { transform: translate(0, 0)        rotate(0deg)    scale(1);    }
+  75%  { transform: translate(-2px, 3px)   rotate(-1.2deg) scale(1.02); }
+  100% { transform: translate(0, 0)        rotate(0deg)    scale(1);    }
+}
+
+.layer.sway {
+  animation: sway 0.45s ease-in-out infinite;
+}
+
+/* ---------- 水波纹 Canvas ---------- */
+#ripple-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;   /* 让点击穿透到热区 */
+  z-index: 20;            /* 盖在衣物上方，显示水波 */
+}
+
+/* ---------- 交互热区：看不见的矩形，只覆盖衣物实体图形 ----------
+   坐标为画布百分比，由每张图实际非透明区域换算得出：
+   1号 卷轴(IP Design)      2号 衬衫(Game Visual)   3号 小挂件(App Design)
+   4号 袜子(Illustration)   5号 手提袋(Font Design)                        */
+.hotspot {
+  position: absolute;
+  cursor: pointer;
+  /* background: rgba(255,0,0,.25); */ /* 调试热区位置时取消注释 */
+}
+#hotspot-1 { left: 12.08%; top: 28.55%; width: 25.82%; height: 46.42%; z-index: 11; }
+#hotspot-2 { left: 39.36%; top: 35.14%; width: 21.56%; height: 46.47%; z-index: 12; }
+#hotspot-3 { left: 32.12%; top: 36.36%; width: 8.04%;  height: 28.22%; z-index: 14; }
+#hotspot-4 { left: 70.11%; top: 26.06%; width: 7.51%;  height: 27.84%; z-index: 14; }
+#hotspot-5 { left: 50.09%; top: 30.57%; width: 26.32%; height: 59.74%; z-index: 13; }
+/* z-index 处理热区重叠：小物件(3/4)优先，再是前面的手提袋(5)，最后是大件(1/2) */
+
+/* ---------- 模态弹窗 ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal[hidden] { display: none; }
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5); /* 半透明黑色遮罩 */
+}
+
+.modal-panel {
+  position: relative;
+  width: min(860px, 92vw);
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 28px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  animation: pop 0.25s ease;
+}
+
+.modal-panel.ip-panel {
+  background: transparent;
+}
+.ip-panel.ip-theme-blue { background: rgba(207, 230, 247, 0.85); }
+.ip-panel.ip-theme-purple { background: rgba(227, 217, 242, 0.85); }
+.ip-panel.ip-theme-green { background: rgba(216, 236, 210, 0.85); }
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f0f0f0;
+  color: #666;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.modal-close:hover { background: #e0e0e0; }
+
+/* 作品网格：2~3 列自适应，占位框后续替换为真实作品图 */
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.work-slot {
+  aspect-ratio: 4 / 3;
+  border: 2px dashed #c9c9c9;
+  border-radius: 12px;
+  background: #fafafa;
+  overflow: hidden;
+}
+.work-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.app-modal-layout {
+  display: grid;
+  grid-template-columns: minmax(228px, 372px) minmax(280px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.app-phone-frame {
+  width: min(372px, 100%);
+  height: 672px;
+  max-width: 372px;
+  aspect-ratio: auto;
+  border: 18px solid #222;
+  border-radius: 44px;
+  background: #111;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 20px 50px rgba(0,0,0,0.25);
+  overflow: hidden;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.app-phone-frame.touched {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 14px 40px rgba(0,0,0,0.28);
+}
+.app-phone-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.app-phone-frame iframe::-webkit-scrollbar {
+  display: none;
+}
+.app-description {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.92);
+}
+.app-gallery {
+  margin-top: 22px;
+}
+.app-gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.app-gallery-grid img {
+  width: calc((100% - 3 * 8px) / 4);
+  min-width: 90px;
+  display: block;
+  margin: 0 auto;
+  border-radius: 14px;
+  object-fit: cover;
+  aspect-ratio: 3 / 4;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+  transform: scale(0.75);
+  transform-origin: top center;
+}
+.app-gallery-grid img:nth-child(n + 5) {
+  width: calc((100% - 2 * 8px) / 3);
+  margin-bottom: 10px;
+}
+.app-description p {
+  margin-bottom: 14px;
+  line-height: 1.75;
+  color: #4a4d63;
+}
+
+/* ============================================================
+ * IP Design 弹窗（modal-1）专属样式
+ * 弹窗内同一画面只显示 1 个 IP 模块，右上角按钮切换上/下一个作品；
+ * 每个模块：左侧图片阅览区（视口居中 + 滑动切换 + 缩略图条），
+ * 右侧标题 + 设计理念。桌面端 2 列，iPad 宽度自动切换为 1 列。
+ * ============================================================ */
+
+/* modal-1 面板加宽，容纳图文双列 */
+.ip-panel {
+  width: min(1180px, 92vw);
+}
+
+/* 右上角「上一个 / 下一个作品」切换按钮，挨着关闭按钮 */
+.ip-nav {
+  position: absolute;
+  top: 14px;
+  right: 60px;
+  display: flex;
+  gap: 8px;
+  z-index: 3;
+}
+.ip-nav-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f0f0f0;
+  color: #666;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.ip-nav-btn:hover { background: #e0e0e0; }
+
+/* 子模块：默认隐藏，.active 才显示（同一画面只有一个 IP） */
+.ip-module { display: none; }
+.ip-module.active {
+  display: block;
+  animation: ipFadeIn 0.35s ease both; /* 渐显 */
+}
+.ip-module.fade-out {
+  opacity: 0;
+  transition: opacity 0.25s ease;      /* 渐隐 */
+}
+@keyframes ipFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 模块标题栏：加粗 + 主题浅色底 */
+.ip-title {
+  display: inline-block;
+  padding: 10px 18px;
+  margin-bottom: 14px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #3a3226;
+  border-radius: 10px;
+}
+.ip-title--blue   { background: #cfe6f7; } /* 大连城市主题IP：浅蓝 */
+.ip-title--purple { background: #e3d9f2; } /* 清华建筑主题IP：淡紫 */
+.ip-title--green  { background: #d8ecd2; } /* 咪叶喵原创IP：浅绿 */
+
+/* 模块主体：桌面端 2 列 = 图片阅览区 | 标题+描述 */
+.ip-module {
+  border-radius: 18px;
+}
+.ip-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.5fr);
+  gap: 0;
+  margin-top: 14px;
+  align-items: start;
+  padding: 18px;
+  border-radius: 18px;
+  background: transparent;
+}
+
+/* ----- 图片阅览区：视口居中，图片横向排列、translateX 滑动切换 ----- */
+.ip-main {
+  position: relative;
+  background: #faf8f3;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 300px;
+}
+.ip-track {
+  display: flex;
+  align-items: center;
+  min-height: 300px;
+  transition: transform 0.38s ease; /* 左右滑动效果 */
+  will-change: transform;
+}
+.ip-track img {
+  width: 100%;
+  flex-shrink: 0;
+  max-height: 56vh;
+  object-fit: contain; /* 图片在视窗内居中自适应 */
+  display: block;
+}
+
+/* 左右切换箭头 */
+.ip-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: #555;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.15s ease;
+}
+.ip-arrow:hover { background: #ffffff; }
+.ip-arrow--prev { left: 10px; }
+.ip-arrow--next { right: 10px; }
+
+/* 缩略图条：横向排列，超出可滚动 */
+.ip-thumbs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.ip-thumbs img {
+  width: 62px;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.ip-thumbs img:hover { opacity: 1; }
+.ip-thumbs img.active { border-color: #e8a33d; opacity: 1; }
+
+/* ----- 设计理念侧栏：对应标题的浅色 tint ----- */
+.ip-info {
+  padding: 18px 20px;
+  border-radius: 12px;
+  width: 100%;
+  background: transparent;
+}
+  .ip-info--blue,
+  .ip-info--purple,
+  .ip-info--green { background: transparent; }
+
+/* ---------- 基础响应式：窄屏时弹窗收紧 ---------- */
+@media (max-width: 560px) {
+  .modal-panel { padding: 18px; }
+  .works-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+}
+
+/* ---------- iPad 平板宽度：IP 模块由 2 列切换为 1 列 ---------- */
+@media (max-width: 1024px) {
+  .ip-body { grid-template-columns: 1fr; }
+  /* 单列时顺序保持：标题 → 设计理念 → 图片 */
+  .ip-info { order: -1; }
+  .ip-track img { max-height: 46vh; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 舞台：所有图层完全重叠 ============ -->
+<main class="stage" id="stage">
+  <!-- 背景层 -->
+  <img class="layer" src="assets/art/首页素材图/蓝色背景.png" alt="" draggable="false" />
+  <!-- 物件层 1~5：画布与背景一致，完全对齐叠放 -->
+  <img class="layer" id="layer-1" src="assets/art/首页素材图/1.png" alt="" draggable="false" />  <img class="layer" src="assets/art/首页素材图/标题.png" alt="" draggable="false" />  <img class="layer" id="layer-2" src="assets/art/首页素材图/2.png" alt="" draggable="false" />
+  <img class="layer" id="layer-3" src="assets/art/首页素材图/3.png" alt="" draggable="false" />
+  <img class="layer" id="layer-4" src="assets/art/首页素材图/4.png" alt="" draggable="false" />
+  <img class="layer" id="layer-5" src="assets/art/首页素材图/5.png" alt="" draggable="false" />
+
+  <!-- 水波纹 Canvas 覆盖层：显示点击涟漪，不拦截事件 -->
+  <canvas id="ripple-canvas" aria-hidden="true"></canvas>
+
+  <!-- 交互热区：只覆盖衣物实体图形，透明区域不触发任何事件 -->
+  <div class="hotspot" id="hotspot-1" data-target="layer-1" data-modal="modal-1"></div>
+  <div class="hotspot" id="hotspot-2" data-target="layer-2" data-modal="modal-2"></div>
+  <div class="hotspot" id="hotspot-3" data-target="layer-3" data-modal="modal-3"></div>
+  <div class="hotspot" id="hotspot-4" data-target="layer-4" data-modal="modal-4"></div>
+  <div class="hotspot" id="hotspot-5" data-target="layer-5" data-modal="modal-5"></div>
+</main>
+
+<!-- ============ 5 套模态弹窗，分别对应 1~5 号物件 ============ -->
+<!-- 占位框 .work-slot：后续把你的作品图放进对应弹窗的网格里即可 -->
+<!-- ===== modal-1：IP Design（大连 / 清华 / 咪叶喵 三个子模块） ===== -->
+<div class="modal" id="modal-1" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel ip-panel ip-theme-blue" role="dialog" aria-modal="true">
+    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
+
+    <!-- 右上角：上一个 / 下一个作品（IP）切换 -->
+    <div class="ip-nav">
+      <button class="ip-nav-btn" id="ip-prev" type="button" aria-label="上一个作品">‹</button>
+      <button class="ip-nav-btn" id="ip-next" type="button" aria-label="下一个作品">›</button>
+    </div>
+
+    <!-- 模块1：大连城市主题IP（浅蓝标题栏），默认展示 -->
+    <section class="ip-module ip-module--blue active" data-folder="assets/art/IP/大连/">
+      <div class="ip-body">
+        <div class="ip-viewer">
+          <div class="ip-main">
+            <div class="ip-track"></div>
+            <button class="ip-arrow ip-arrow--prev" type="button" aria-label="上一张">‹</button>
+            <button class="ip-arrow ip-arrow--next" type="button" aria-label="下一张">›</button>
+          </div>
+          <div class="ip-thumbs"></div>
+        </div>
+        <aside class="ip-info ip-info--blue">
+          <h3 class="ip-title ip-title--blue">大连城市主题IP</h3>
+          <p>作为土生土长的大连人，我以大连本土城市特色为内核，创作了5个风格迥异的拟人IP角色。角色灵感源自大连当地风物特产，如海胆、樱桃等城市代表性符号，融合海滨城市独有的气质，打造鲜活充满海滨烟火气的角色形象。整套IP将家乡文化符号转化为人设视觉，兼顾趣味性与文化表达。</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 模块2：清华建筑主题IP（淡紫标题栏） -->
+    <section class="ip-module ip-module--purple" data-folder="assets/art/IP/清华/">
+      <div class="ip-body">
+        <div class="ip-viewer">
+          <div class="ip-main">
+            <div class="ip-track"></div>
+            <button class="ip-arrow ip-arrow--prev" type="button" aria-label="上一张">‹</button>
+            <button class="ip-arrow ip-arrow--next" type="button" aria-label="下一张">›</button>
+          </div>
+          <div class="ip-thumbs"></div>
+        </div>
+        <aside class="ip-info ip-info--purple">
+          <h3 class="ip-title ip-title--purple">清华建筑主题IP</h3>
+          <p>本套IP以清华校园经典建筑作为创作原点，提取建筑结构、轮廓色彩、细节装饰，转化为角色的服饰纹样、配饰与外形特征。把静态建筑进行人格化转译，让建筑美学具象成活的人物形象，用IP语言重新诠释校园建筑的独特魅力。</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 模块3：咪叶喵原创IP（浅绿标题栏） -->
+    <section class="ip-module ip-module--green" data-folder="assets/art/IP/咪叶喵/">
+      <div class="ip-body">
+        <div class="ip-viewer">
+          <div class="ip-main">
+            <div class="ip-track"></div>
+            <button class="ip-arrow ip-arrow--prev" type="button" aria-label="上一张">‹</button>
+            <button class="ip-arrow ip-arrow--next" type="button" aria-label="下一张">›</button>
+          </div>
+          <div class="ip-thumbs"></div>
+        </div>
+        <aside class="ip-info ip-info--green">
+          <h3 class="ip-title ip-title--green">咪叶喵原创IP</h3>
+          <p>一套世界观向原创IP，围绕「保护/破坏」二元对立的核心矛盾搭建角色体系。角色两两对立又彼此依存，在性格、视觉造型上形成强烈反差，借人设探讨制衡、冲突与共生的命题，完整世界观通过人设卡片、角色视觉来落地。</p>
+        </aside>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="modal" id="modal-2" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
+    <div class="works-grid">
+      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-3" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
+    <div class="app-modal-layout">
+      <div class="app-phone-frame">
+        <iframe src="https://travelmate-production-1ad2.up.railway.app/" title="Troublemate App Preview" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+      </div>
+      <div class="app-description">
+        <h3>Troublemate / 旅行搭子</h3>
+        <p>这是一个面向旅行规划和分账管理的辅助软件，支持行程规划、预算分摊、行程协同和出行提醒等功能。</p>
+        <p>我负责了这一项目中基于 IP 形象的视觉设计，以及 APP 页面结构和排版布局，确保品牌形象与产品体验一致。</p>
+        <div class="app-gallery">
+          <div class="app-gallery-grid">
+            <img src="assets/art/APP/1.png" alt="App design 1" />
+            <img src="assets/art/APP/2.png" alt="App design 2" />
+            <img src="assets/art/APP/3.png" alt="App design 3" />
+            <img src="assets/art/APP/4.png" alt="App design 4" />
+            <img src="assets/art/APP/5.png" alt="App design 5" />
+            <img src="assets/art/APP/6.png" alt="App design 6" />
+            <img src="assets/art/APP/7.png" alt="App design 7" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-4" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
+    <div class="works-grid">
+      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-5" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
+    <div class="works-grid">
+      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+ * 交互逻辑：
+ * 1. hover 热区 → 对应物件图层播放柔和风吹颤动动画，离开即停
+ * 2. 点击热区 → 从点击位置扩散水波纹，然后延迟打开对应弹窗
+ * 3. 点关闭按钮 / 点遮罩 / 按 ESC 均可关闭弹窗
+ * ============================================================ */
+(function () {
+  "use strict";
+
+  /* ---------- hover 颤动 ---------- */
+  document.querySelectorAll(".hotspot").forEach(function (hotspot) {
+    var layer = document.getElementById(hotspot.dataset.target);
+
+    hotspot.addEventListener("mouseenter", function () {
+      layer.classList.add("sway");
+    });
+    hotspot.addEventListener("mouseleave", function () {
+      layer.classList.remove("sway");
+    });
+  });
+
+  /* ---------- 水波纹 Canvas 系统 ---------- */
+  var stage = document.getElementById("stage");
+  var rippleCanvas = document.getElementById("ripple-canvas");
+  var rctx = rippleCanvas.getContext("2d");
+
+  var dpr = Math.max(1, window.devicePixelRatio || 1);
+  var ripples = [];
+  var rippleRafId = null;
+
+  function resizeRippleCanvas() {
+    var rect = stage.getBoundingClientRect();
+    rippleCanvas.width = Math.round(rect.width * dpr);
+    rippleCanvas.height = Math.round(rect.height * dpr);
+    rippleCanvas.style.width = rect.width + "px";
+    rippleCanvas.style.height = rect.height + "px";
+    rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  window.addEventListener("resize", resizeRippleCanvas);
+  resizeRippleCanvas();
+
+  function addRipple(clientX, clientY) {
+    var rect = stage.getBoundingClientRect();
+    var x = clientX - rect.left;
+    var y = clientY - rect.top;
+
+    ripples.push({
+      x: x,
+      y: y,
+      start: performance.now(),
+      duration: 850,
+      maxR: Math.max(rect.width, rect.height) * 0.5
+    });
+
+    if (!rippleRafId) {
+      rippleRafId = requestAnimationFrame(drawRipples);
+    }
+  }
+
+  function drawRipples(now) {
+    var cssW = rippleCanvas.clientWidth;
+    var cssH = rippleCanvas.clientHeight;
+
+    rctx.clearRect(0, 0, cssW, cssH);
+
+    var alive = false;
+    var nextRipples = [];
+
+    for (var i = 0; i < ripples.length; i++) {
+      var r = ripples[i];
+      var t = (now - r.start) / r.duration;
+
+      if (t >= 1) continue;
+
+      alive = true;
+      nextRipples.push(r);
+
+      // easeOutCubic：让涟漪从快到慢扩散
+      var p = 1 - Math.pow(1 - t, 3);
+      var radius = p * r.maxR;
+      var alpha = (1 - t) * 0.85;
+
+      // 外圈：白色高亮
+      rctx.beginPath();
+      rctx.arc(r.x, r.y, radius, 0, Math.PI * 2);
+      rctx.strokeStyle = "rgba(255, 255, 255, " + alpha.toFixed(3) + ")";
+      rctx.lineWidth = 3.5 - t * 2;
+      rctx.stroke();
+
+      // 内圈：淡蓝色，更有水感
+      rctx.beginPath();
+      rctx.arc(r.x, r.y, radius * 0.7, 0, Math.PI * 2);
+      rctx.strokeStyle = "rgba(180, 220, 255, " + (alpha * 0.45).toFixed(3) + ")";
+      rctx.lineWidth = 6 - t * 4;
+      rctx.stroke();
+    }
+
+    ripples = nextRipples;
+
+    if (alive) {
+      rippleRafId = requestAnimationFrame(drawRipples);
+    } else {
+      rippleRafId = null;
+      rctx.clearRect(0, 0, cssW, cssH);
+    }
+  }
+
+  /* ---------- 弹窗开关 ---------- */
+  function openModal(id) {
+    document.getElementById(id).hidden = false;
+  }
+  function closeModal(modal) {
+    modal.hidden = true;
+  }
+
+  // 点击热区：按下时产生水波纹，松开后延迟打开对应弹窗
+  document.querySelectorAll(".hotspot").forEach(function (hotspot) {
+    hotspot.addEventListener("pointerdown", function (e) {
+      addRipple(e.clientX, e.clientY);
+    });
+
+    hotspot.addEventListener("click", function () {
+      var modalId = hotspot.dataset.modal;
+      setTimeout(function () {
+        openModal(modalId);
+      }, 200);
+    });
+  });
+
+  // 点击关闭按钮或遮罩层关闭
+  document.querySelectorAll(".modal").forEach(function (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target.hasAttribute("data-close")) closeModal(modal);
+    });
+  });
+
+  // 手机 APP 预览按压效果
+  var appPhoneFrame = document.querySelector(".app-phone-frame");
+  var appPhoneIframe = document.querySelector(".app-phone-frame iframe");
+  function setAppPressed(isPressed) {
+    if (!appPhoneFrame) return;
+    appPhoneFrame.classList.toggle("touched", isPressed);
+  }
+  if (appPhoneFrame) {
+    appPhoneFrame.addEventListener("pointerdown", function () {
+      setAppPressed(true);
+    });
+    appPhoneFrame.addEventListener("pointerup", function () {
+      window.setTimeout(function () {
+        setAppPressed(false);
+      }, 120);
+    });
+    appPhoneFrame.addEventListener("pointercancel", function () {
+      setAppPressed(false);
+    });
+  }
+  if (appPhoneIframe) {
+    appPhoneIframe.addEventListener("pointerdown", function () {
+      setAppPressed(true);
+    });
+    appPhoneIframe.addEventListener("pointerup", function () {
+      window.setTimeout(function () {
+        setAppPressed(false);
+      }, 120);
+    });
+    appPhoneIframe.addEventListener("pointercancel", function () {
+      setAppPressed(false);
+    });
+  }
+
+  // ESC 关闭当前打开的弹窗
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    document.querySelectorAll(".modal:not([hidden])").forEach(closeModal);
+  });
+
+  /* ============================================================
+   * IP 模块图片自动加载 + 模块切换
+   * 不硬编码图片路径：从 1.png 开始按数字递增依次试探加载，
+   * 遇到第一个加载失败的编号即停止（文件命名严格为 1,2,3… 连续数字），
+   * 因此「目录下有几张就渲染几张」，且始终按数字升序展示。
+   * 每个模块独立维护：滑动轨道、缩略图条、左右箭头切换（滑动效果）；
+   * 右上角按钮在 3 个 IP 模块间循环切换（渐显渐隐效果）。
+   * ============================================================ */
+  var ipModules = Array.prototype.slice.call(document.querySelectorAll(".ip-module"));
+  var ipPanel = document.querySelector(".modal-panel.ip-panel");
+  var ipThemeClasses = ["ip-theme-blue", "ip-theme-purple", "ip-theme-green"];
+  function applyPanelTheme(index) {
+    ipPanel.classList.remove.apply(ipPanel.classList, ipThemeClasses);
+    ipPanel.classList.add(ipThemeClasses[index]);
+  }
+
+  ipModules.forEach(function (moduleEl) {
+    var folder = moduleEl.dataset.folder;          // 图片所在文件夹，如 assets/art/IP/大连/
+    var track = moduleEl.querySelector(".ip-track");
+    var thumbsBox = moduleEl.querySelector(".ip-thumbs");
+    var images = [];                               // 加载成功的图片路径，按数字升序
+    var current = 0;                               // 当前展示的图片下标
+
+    // 切换图片：轨道 translateX 滑动 + 缩略图高亮
+    function show(index) {
+      if (!images.length) return;
+      current = (index + images.length) % images.length; // 首尾循环
+      track.style.transform = "translateX(-" + current * 100 + "%)";
+      thumbsBox.querySelectorAll("img").forEach(function (thumb, i) {
+        thumb.classList.toggle("active", i === current);
+      });
+    }
+
+    // 依次试探加载 1.png、2.png、3.png……
+    function loadNext(n) {
+      var probe = new Image();
+      probe.onload = function () {
+        var src = folder + n + ".png";
+        images.push(src);
+
+        // 主图放进滑动轨道
+        var slide = document.createElement("img");
+        slide.src = src;
+        slide.alt = n;
+        track.appendChild(slide);
+
+        // 渲染对应缩略图，点击滑动到对应图片
+        var thumb = document.createElement("img");
+        thumb.src = src;
+        thumb.alt = n;
+        thumb.addEventListener("click", function () {
+          show(images.indexOf(src));
+        });
+        thumbsBox.appendChild(thumb);
+
+        if (images.length === 1) show(0); // 第一张加载成功即展示
+        loadNext(n + 1);                  // 继续试探下一个编号
+      };
+      probe.onerror = function () {
+        // 编号中断 = 目录下图片已全部加载完，无需处理
+      };
+      probe.src = folder + n + ".png";
+    }
+
+    // 左右箭头循环切换（轨道滑动）
+    moduleEl.querySelector(".ip-arrow--prev").addEventListener("click", function () {
+      show(current - 1);
+    });
+    moduleEl.querySelector(".ip-arrow--next").addEventListener("click", function () {
+      show(current + 1);
+    });
+
+    loadNext(1); // 从 1.png 开始自动读取
+  });
+
+  /* ---------- 上一个 / 下一个作品：IP 模块循环切换，渐隐 → 渐显 ---------- */
+  var ipCurrent = 0;   // 当前展示的模块下标
+  var ipSwitching = false;
+
+  function switchIP(next) {
+    next = (next + ipModules.length) % ipModules.length; // 首尾循环
+    if (ipSwitching || next === ipCurrent) return;
+    ipSwitching = true;
+
+    var curEl = ipModules[ipCurrent];
+    var nextEl = ipModules[next];
+    ipCurrent = next;
+
+    curEl.classList.add("fade-out"); // 先渐隐当前模块
+    setTimeout(function () {
+      curEl.classList.remove("active", "fade-out");
+      nextEl.classList.add("active"); // 再渐显下一个模块（CSS animation）
+      applyPanelTheme(next);
+      ipSwitching = false;
+    }, 250); // 与 .fade-out 的 transition 时长一致
+  }
+
+  document.getElementById("ip-prev").addEventListener("click", function () {
+    switchIP(ipCurrent - 1);
+  });
+  document.getElementById("ip-next").addEventListener("click", function () {
+    switchIP(ipCurrent + 1);
+  });
+})();
+</script>
+</body>
+</html>
