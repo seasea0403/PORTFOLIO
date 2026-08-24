@@ -14,6 +14,46 @@
 /* ---------- 基础 ---------- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ============================================================
+ * 弹窗全局调节区
+ * 1) 字号：只改下面 --fs-* 变量，所有弹窗文字同步变化
+ * 2) 尺寸：只改下面 --modal-*-width / --modal-base-max-h，可单独控制
+ *    每个弹窗的宽度上限和高度上限
+ * ============================================================ */
+:root {
+  /* 字号 */
+  --fs-heading: 72px;   /* 弹窗大标题 chip */
+  --fs-card-name: 56px; /* 游戏卡片上的项目名称 */
+  --fs-body: 44px;      /* 正文/项目描述 */
+  --fs-tag: 36px;       /* 标签 chip */
+  --fs-toggle: 34px;    /* 「播放剪辑视频」切换按钮 */
+  --fs-btn: 44px;       /* 圆形按钮（关闭/上下切换/箭头）里的符号 */
+
+  /* 弹窗尺寸 */
+  --modal-base-width: 3784px;        /* 通用弹窗宽度上限 */
+  --modal-base-max-h: 95vh;          /* 通用弹窗高度上限 */
+  --modal-ip-width: 3784px;          /* IP 设计弹窗 */
+  --modal-game-list-width: 3784px;    /* 游戏项目列表弹窗（modal-2） */
+  --modal-game-detail-width: 3784px;  /* 游戏详情弹窗（modal-game） */
+  --modal-app-width: 2500px;         /* APP 设计弹窗宽度 */
+  --modal-app-height: 95vh;          /* APP 设计弹窗高度上限 */
+  --modal-font-width: 3200px;         /* 字体设计弹窗 */
+  --modal-illus-width: 3600px;        /* 插画弹窗 */
+
+  /* 局部缩放调节（手动微调） */
+  --app-phone-base-w: 560px; /* APP 手机框基准宽度 */
+  --app-phone-scale: 1.5;    /* APP 手机框缩放：1=原尺寸，<1 缩小，>1 放大 */
+  --ip-image-scale: 1;      /* IP/游戏/字体大图缩放：1=原尺寸，<1 缩小，>1 放大 */
+
+  /* APP 画廊图片列数/间距/缩放 */
+  --app-gallery-columns: 4;      /* APP 截图每行显示几张（数字越小，单张越大） */
+  --app-gallery-gap: 10px;       /* APP 截图之间的间距 */
+  --app-gallery-img-scale: 0.5;    /* APP 截图额外缩放（1=原尺寸，<1 缩小，>1 放大） */
+
+  /* 关闭/切换按钮符号字号 */
+  --fs-btn: 72px;       /* 圆形按钮（关闭/箭头）里的符号大小 */
+}
+
 body {
   min-height: 100vh;
   display: flex;
@@ -63,14 +103,89 @@ body {
   animation: sway 0.45s ease-in-out infinite;
 }
 
-/* ---------- 水波纹 Canvas ---------- */
-#ripple-canvas {
+/* ---------- 点击反馈：轻微放大回弹 ---------- */
+@keyframes tap-pop {
+  0%   { scale: 1; }
+  45%  { scale: 1.06; }
+  100% { scale: 1; }
+}
+.layer.tap-pop {
+  animation: tap-pop 0.4s ease;
+}
+
+/* ---------- 波浪线背景层（AWaves 组件，白色线条） ---------- */
+a-waves {
+  --x: -0.5rem;
+  --y: 50%;
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  pointer-events: none; /* 波浪线不拦截鼠标，保证衣物热区可点击 */
+}
+
+a-waves::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #ffffff;
+  border-radius: 50%;
+  transform: translate3d(calc(var(--x) - 50%), calc(var(--y) - 50%), 0);
+  will-change: transform;
+  content: "";
+}
+
+a-waves svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+a-waves svg path {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1px;
+}
+
+/* ---------- 水波纹 DOM 层 ---------- */
+#ripple-layer {
+  position: absolute;
+  inset: 0;
   pointer-events: none;   /* 让点击穿透到热区 */
   z-index: 20;            /* 盖在衣物上方，显示水波 */
+  overflow: hidden;
+}
+
+.ripple-dot {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  margin-left: calc(var(--size) / -2);
+  margin-top: calc(var(--size) / -2);
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 18px rgba(180, 220, 255, 0.7);
+  animation: ripple 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
 }
 
 /* ---------- 交互热区：看不见的矩形，只覆盖衣物实体图形 ----------
@@ -108,42 +223,100 @@ body {
 
 .modal-panel {
   position: relative;
-  width: min(860px, 92vw);
-  max-height: 84vh;
+  width: min(var(--modal-base-width), 97vw); /* 宽度上限由 --modal-base-width 控制 */
+  max-height: var(--modal-base-max-h);       /* 高度上限由 --modal-base-max-h 控制 */
   overflow-y: auto;
-  padding: 28px;
+  padding: 56px;
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 28px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   animation: pop 0.25s ease;
 }
 
+/* 除 IP 外的弹窗：标题与关闭按钮同一行（标题居左、关闭居右） */
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+.modal-head .modal-heading { margin-bottom: 0; }
+.modal-close--inline {
+  position: static;
+  flex-shrink: 0;
+}
+
+/* 按弹窗 ID 单独覆盖宽度/高度（无覆盖就沿用 --modal-base-*） */
+.modal-panel.ip-panel { --modal-base-width: var(--modal-ip-width); }
+#modal-2 .modal-panel { --modal-base-width: var(--modal-game-list-width); }
+#modal-game .modal-panel { --modal-base-width: var(--modal-game-detail-width); }
+#modal-3 .modal-panel {
+  --modal-base-width: var(--modal-app-width);
+  --modal-base-max-h: var(--modal-app-height);
+}
+#modal-4 .modal-panel { --modal-base-width: var(--modal-illus-width); }
+#modal-5 .modal-panel { --modal-base-width: var(--modal-font-width); }
+
+/* IP 弹窗保留右上角绝对定位的关闭+切换按钮，关闭按钮高度也减半 */
 .modal-panel.ip-panel {
+  padding-top: 120px;
   background: transparent;
 }
-.ip-panel.ip-theme-blue { background: rgba(207, 230, 247, 0.85); }
-.ip-panel.ip-theme-purple { background: rgba(227, 217, 242, 0.85); }
-.ip-panel.ip-theme-green { background: rgba(216, 236, 210, 0.85); }
+.modal-panel.ip-panel .modal-close {
+  width: 160px;
+  height: 80px;
+  font-size: 40px;
+}
+/* IP 主题底色提高不透明度，与其余弹窗的白色面板观感统一 */
+.ip-panel.ip-theme-blue { background: rgba(207, 230, 247, 0.95); }
+.ip-panel.ip-theme-purple { background: rgba(227, 217, 242, 0.95); }
+.ip-panel.ip-theme-green { background: rgba(216, 236, 210, 0.95); }
 
 @keyframes pop {
   from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
+/* 五类弹窗共用的标题 chip 样式（与 ip-title 基础参数一致） */
+.modal-heading {
+  display: inline-block;
+  padding: 18px 36px;
+  margin-bottom: 28px;
+  font-size: var(--fs-heading);
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #3a3226;
+  background: #cfe6f7; /* 贴合整站蓝色主调 */
+  border-radius: 18px;
+}
+
+/* 五类弹窗共用的标签 chip 样式 */
+.tag-chip {
+  display: inline-block;
+  padding: 10px 24px;
+  font-size: var(--fs-tag);
+  color: #4a6a8a;
+  background: #ffffff;
+  border: 1.5px solid #d8e6f5;
+  border-radius: 999px;
+}
+
 .modal-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
+  top: 36px;
+  right: 36px;
+  width: 160px;
+  height: 160px;
   border: none;
   border-radius: 50%;
   background: #f0f0f0;
   color: #666;
-  font-size: 20px;
+  font-size: var(--fs-btn);
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s ease;
+  z-index: 3;
 }
 .modal-close:hover { background: #e0e0e0; }
 
@@ -170,17 +343,17 @@ body {
 
 .app-modal-layout {
   display: grid;
-  grid-template-columns: minmax(228px, 372px) minmax(280px, 1fr);
-  gap: 18px;
-  align-items: start;
+  grid-template-columns: minmax(300px, 560px) minmax(280px, 1fr);
+  gap: 40px;
+  align-items: start; /* 手机按自身宽高比自然显示，上下与右侧自然对齐 */
 }
 .app-phone-frame {
-  width: min(372px, 100%);
-  height: 672px;
-  max-width: 372px;
-  aspect-ratio: auto;
-  border: 18px solid #222;
-  border-radius: 44px;
+  width: min(calc(var(--app-phone-base-w) * var(--app-phone-scale)), 100%);
+  height: auto;
+  max-width: calc(var(--app-phone-base-w) * var(--app-phone-scale));
+  aspect-ratio: 372 / 672; /* 与原手机比例一致，宽高一起缩放 */
+  border: 24px solid #222;
+  border-radius: 56px;
   background: #111;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 20px 50px rgba(0,0,0,0.25);
   overflow: hidden;
@@ -206,38 +379,36 @@ body {
   display: none;
 }
 .app-description {
-  padding: 18px 20px;
-  border-radius: 16px;
+  padding: 36px 40px;
+  border-radius: 24px;
   background: rgba(255,255,255,0.92);
 }
-.app-gallery {
-  margin-top: 22px;
+.app-description .modal-heading {
+  margin-top: 0;
 }
+.app-gallery {
+  margin-top: 32px;
+}
+/* 截图网格：列数/间距/缩放都由变量控制 */
 .app-gallery-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(var(--app-gallery-columns), 1fr);
+  gap: var(--app-gallery-gap);
 }
 .app-gallery-grid img {
-  width: calc((100% - 3 * 8px) / 4);
-  min-width: 90px;
+  width: 100%;
   display: block;
-  margin: 0 auto;
-  border-radius: 14px;
+  border-radius: 18px;
   object-fit: cover;
   aspect-ratio: 3 / 4;
   box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-  transform: scale(0.75);
-  transform-origin: top center;
-}
-.app-gallery-grid img:nth-child(n + 5) {
-  width: calc((100% - 2 * 8px) / 3);
-  margin-bottom: 10px;
+  transform: scale(var(--app-gallery-img-scale));
+  transform-origin: center;
 }
 .app-description p {
-  margin-bottom: 14px;
-  line-height: 1.75;
+  margin-bottom: 22px;
+  line-height: 1.9;
+  font-size: var(--fs-body);
   color: #4a4d63;
 }
 
@@ -248,31 +419,28 @@ body {
  * 右侧标题 + 设计理念。桌面端 2 列，iPad 宽度自动切换为 1 列。
  * ============================================================ */
 
-/* modal-1 面板加宽，容纳图文双列 */
-.ip-panel {
-  width: min(1180px, 92vw);
-}
-
 /* 右上角「上一个 / 下一个作品」切换按钮，挨着关闭按钮 */
 .ip-nav {
   position: absolute;
-  top: 14px;
-  right: 60px;
+  top: 36px;
+  right: 220px;
   display: flex;
-  gap: 8px;
+  gap: 16px;
   z-index: 3;
 }
 .ip-nav-btn {
-  width: 36px;
-  height: 36px;
+  width: 160px;
+  height: 80px;
   border: none;
-  border-radius: 50%;
+  border-radius: 12px; /* 矩形底图，边缘轻微圆角 */
   background: #f0f0f0;
   color: #666;
-  font-size: 18px;
+  font-size: 40px;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s ease;
+  white-space: nowrap;
 }
 .ip-nav-btn:hover { background: #e0e0e0; }
 
@@ -294,13 +462,13 @@ body {
 /* 模块标题栏：加粗 + 主题浅色底 */
 .ip-title {
   display: inline-block;
-  padding: 10px 18px;
-  margin-bottom: 14px;
-  font-size: 19px;
+  padding: 18px 36px;
+  margin-bottom: 28px;
+  font-size: var(--fs-heading);
   font-weight: 700;
   letter-spacing: 2px;
   color: #3a3226;
-  border-radius: 10px;
+  border-radius: 18px;
 }
 .ip-title--blue   { background: #cfe6f7; } /* 大连城市主题IP：浅蓝 */
 .ip-title--purple { background: #e3d9f2; } /* 清华建筑主题IP：淡紫 */
@@ -313,11 +481,11 @@ body {
 .ip-body {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.5fr);
-  gap: 0;
-  margin-top: 14px;
+  gap: 40px;
+  margin-top: 24px;
   align-items: start;
-  padding: 18px;
-  border-radius: 18px;
+  padding: 36px;
+  border-radius: 28px;
   background: transparent;
 }
 
@@ -325,23 +493,25 @@ body {
 .ip-main {
   position: relative;
   background: #faf8f3;
-  border-radius: 12px;
+  border-radius: 18px;
   overflow: hidden;
-  min-height: 300px;
+  min-height: 640px;
 }
 .ip-track {
   display: flex;
   align-items: center;
-  min-height: 300px;
+  min-height: 640px;
   transition: transform 0.38s ease; /* 左右滑动效果 */
   will-change: transform;
 }
 .ip-track img {
   width: 100%;
   flex-shrink: 0;
-  max-height: 56vh;
+  max-height: 70vh;
   object-fit: contain; /* 图片在视窗内居中自适应 */
   display: block;
+  transform: scale(var(--ip-image-scale));
+  transform-origin: center;
 }
 
 /* 左右切换箭头 */
@@ -349,36 +519,36 @@ body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 38px;
-  height: 38px;
+  width: 168px;
+  height: 168px;
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.85);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   color: #555;
-  font-size: 18px;
+  font-size: var(--fs-btn);
   cursor: pointer;
   z-index: 2;
   transition: background 0.15s ease;
 }
 .ip-arrow:hover { background: #ffffff; }
-.ip-arrow--prev { left: 10px; }
-.ip-arrow--next { right: 10px; }
+.ip-arrow--prev { left: 36px; }
+.ip-arrow--next { right: 36px; }
 
 /* 缩略图条：横向排列，超出可滚动 */
 .ip-thumbs {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 16px;
+  margin-top: 20px;
   overflow-x: auto;
   padding-bottom: 4px;
 }
 .ip-thumbs img {
-  width: 62px;
-  height: 62px;
+  width: 140px;
+  height: 140px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 16px;
   border: 2px solid transparent;
   cursor: pointer;
   flex-shrink: 0;
@@ -390,10 +560,15 @@ body {
 
 /* ----- 设计理念侧栏：对应标题的浅色 tint ----- */
 .ip-info {
-  padding: 18px 20px;
-  border-radius: 12px;
+  padding: 24px 28px;
+  border-radius: 18px;
   width: 100%;
   background: transparent;
+}
+.ip-info p {
+  font-size: var(--fs-body);
+  line-height: 1.9;
+  color: #4a4d63;
 }
   .ip-info--blue,
   .ip-info--purple,
@@ -401,8 +576,9 @@ body {
 
 /* ---------- 基础响应式：窄屏时弹窗收紧 ---------- */
 @media (max-width: 560px) {
-  .modal-panel { padding: 18px; }
+  .modal-panel { padding: 28px; }
   .works-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .modal-heading, .ip-title { font-size: 36px; }
 }
 
 /* ---------- iPad 平板宽度：IP 模块由 2 列切换为 1 列 ---------- */
@@ -410,7 +586,105 @@ body {
   .ip-body { grid-template-columns: 1fr; }
   /* 单列时顺序保持：标题 → 设计理念 → 图片 */
   .ip-info { order: -1; }
-  .ip-track img { max-height: 46vh; }
+  .ip-track img { max-height: 54vh; }
+}
+
+/* ============================================================
+ * 游戏自研 / 字体设计 / 插画 弹窗组件
+ * 与 IP / APP 弹窗共用面板、标题 chip、标签 chip、阅览器规范
+ * ============================================================ */
+
+/* ---------- 游戏项目列表（modal-2）：固定 2 × 2 排列 ---------- */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 42px;
+}
+.game-card {
+  background: #faf8f3;
+  border-radius: 24px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+}
+.game-card-cover {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  display: block;
+}
+.game-card-body { padding: 26px 30px 28px; }
+.game-card-name {
+  font-size: var(--fs-card-name);
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #3a3226;
+  margin-bottom: 18px;
+}
+.game-card-tags { display: flex; flex-wrap: wrap; gap: 14px; }
+
+/* ---------- 游戏项目统一详情弹窗（modal-game，与列表同尺寸面板） ---------- */
+.game-tags { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 26px; }
+.game-detail-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.5fr);
+  gap: 40px;
+  align-items: start;
+}
+/* 视频切换按钮：点击后视频占满原图片阅览区的位置 */
+.game-video-toggle {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 999px;
+  background: #cfe6f7;
+  color: #3a3226;
+  font-size: var(--fs-toggle);
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.game-video-toggle:hover { background: #b9daf2; }
+/* B 站内嵌播放器：16:9，与图片阅览区同一位置切换显示 */
+.game-video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+.game-video iframe { width: 100%; height: 100%; border: 0; display: block; }
+.game-info p {
+  margin-bottom: 20px;
+  line-height: 1.9;
+  font-size: var(--fs-body);
+  color: #4a4d63;
+}
+
+/* ---------- 字体设计分页（modal-5）：复用 .ip-viewer / .ip-main / .ip-track / .ip-thumbs ---------- */
+
+/* ---------- 插画展示（modal-4）：纯图片列表 ---------- */
+.illus-list { display: flex; flex-direction: column; gap: 42px; }
+.illus-list img {
+  width: 100%;
+  display: block;
+  border-radius: 20px;
+  background: #faf8f3;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+/* 平板及以下：游戏详情由双列降为单列，游戏列表降为单列 */
+@media (max-width: 1024px) {
+  .game-detail-body { grid-template-columns: 1fr; }
+  .game-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -420,14 +694,19 @@ body {
 <main class="stage" id="stage">
   <!-- 背景层 -->
   <img class="layer" src="assets/art/首页素材图/蓝色背景.png" alt="" draggable="false" />
+  <!-- 波浪线层：铺在蓝色背景之上、物件图层之下 -->
+  <a-waves><svg class="js-svg"></svg></a-waves>
   <!-- 物件层 1~5：画布与背景一致，完全对齐叠放 -->
-  <img class="layer" id="layer-1" src="assets/art/首页素材图/1.png" alt="" draggable="false" />  <img class="layer" src="assets/art/首页素材图/标题.png" alt="" draggable="false" />  <img class="layer" id="layer-2" src="assets/art/首页素材图/2.png" alt="" draggable="false" />
+  <img class="layer" id="layer-1" src="assets/art/首页素材图/1.png" alt="" draggable="false" />
+  <img class="layer" id="layer-2" src="assets/art/首页素材图/2.png" alt="" draggable="false" />
   <img class="layer" id="layer-3" src="assets/art/首页素材图/3.png" alt="" draggable="false" />
   <img class="layer" id="layer-4" src="assets/art/首页素材图/4.png" alt="" draggable="false" />
   <img class="layer" id="layer-5" src="assets/art/首页素材图/5.png" alt="" draggable="false" />
+  <!-- 标题层放在物件层之上，保证标题在最上面 -->
+  <img class="layer" src="assets/art/首页素材图/标题.png" alt="" draggable="false" />
 
-  <!-- 水波纹 Canvas 覆盖层：显示点击涟漪，不拦截事件 -->
-  <canvas id="ripple-canvas" aria-hidden="true"></canvas>
+  <!-- 水波纹 DOM 容器：只显示波纹，不拦截点击 -->
+  <div id="ripple-layer"></div>
 
   <!-- 交互热区：只覆盖衣物实体图形，透明区域不触发任何事件 -->
   <div class="hotspot" id="hotspot-1" data-target="layer-1" data-modal="modal-1"></div>
@@ -447,8 +726,8 @@ body {
 
     <!-- 右上角：上一个 / 下一个作品（IP）切换 -->
     <div class="ip-nav">
-      <button class="ip-nav-btn" id="ip-prev" type="button" aria-label="上一个作品">‹</button>
-      <button class="ip-nav-btn" id="ip-next" type="button" aria-label="下一个作品">›</button>
+      <button class="ip-nav-btn" id="ip-prev" type="button" aria-label="上一个作品">上一个</button>
+      <button class="ip-nav-btn" id="ip-next" type="button" aria-label="下一个作品">下一个</button>
     </div>
 
     <!-- 模块1：大连城市主题IP（浅蓝标题栏），默认展示 -->
@@ -508,27 +787,30 @@ body {
   </div>
 </div>
 
+<!-- ===== modal-2：游戏自研设计（4 个游戏项目卡片，点击进入统一详情弹窗） ===== -->
 <div class="modal" id="modal-2" hidden>
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
-    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
-    <div class="works-grid">
-      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
-      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+    <div class="modal-head">
+      <h3 class="modal-heading">游戏自研设计 · Game Visual</h3>
+      <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
     </div>
+    <div class="game-grid" id="game-grid"></div>
   </div>
 </div>
 
 <div class="modal" id="modal-3" hidden>
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
-    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
+    <div class="modal-head">
+      <h3 class="modal-heading">Troublemate / 旅行搭子</h3>
+      <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
+    </div>
     <div class="app-modal-layout">
       <div class="app-phone-frame">
         <iframe src="https://travelmate-production-1ad2.up.railway.app/" title="Troublemate App Preview" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
       </div>
       <div class="app-description">
-        <h3>Troublemate / 旅行搭子</h3>
         <p>这是一个面向旅行规划和分账管理的辅助软件，支持行程规划、预算分摊、行程协同和出行提醒等功能。</p>
         <p>我负责了这一项目中基于 IP 形象的视觉设计，以及 APP 页面结构和排版布局，确保品牌形象与产品体验一致。</p>
         <div class="app-gallery">
@@ -547,24 +829,61 @@ body {
   </div>
 </div>
 
+<!-- ===== modal-4：插画（纯图片展示，无分页） ===== -->
 <div class="modal" id="modal-4" hidden>
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
-    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
-    <div class="works-grid">
-      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
-      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+    <div class="modal-head">
+      <h3 class="modal-heading">插画 · Illustration</h3>
+      <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
+    </div>
+    <div class="illus-list" id="illus-list"></div>
+  </div>
+</div>
+
+<!-- ===== modal-5：字体设计（与 IP 设计一致：大图 + 左右箭头 + 下方缩略图） ===== -->
+<div class="modal" id="modal-5" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 class="modal-heading">字体设计 · Font Design</h3>
+      <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
+    </div>
+    <div class="ip-viewer">
+      <div class="ip-main">
+        <div class="ip-track" id="font-track"></div>
+        <button class="ip-arrow ip-arrow--prev" id="font-prev" type="button" aria-label="上一页">‹</button>
+        <button class="ip-arrow ip-arrow--next" id="font-next" type="button" aria-label="下一页">›</button>
+      </div>
+      <div class="ip-thumbs" id="font-thumbs"></div>
     </div>
   </div>
 </div>
 
-<div class="modal" id="modal-5" hidden>
+<!-- ===== modal-game：游戏项目统一详情弹窗（由 modal-2 内的项目卡片唤起） ===== -->
+<div class="modal" id="modal-game" hidden>
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
-    <button class="modal-close" type="button" data-close aria-label="关闭">×</button>
-    <div class="works-grid">
-      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
-      <div class="work-slot"></div><div class="work-slot"></div><div class="work-slot"></div>
+    <div class="modal-head">
+      <h3 class="modal-heading" id="game-title"></h3>
+      <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
+    </div>
+    <div class="game-tags" id="game-tags"></div>
+    <div class="game-detail-body">
+      <div class="game-media">
+        <button class="game-video-toggle" id="game-video-toggle" type="button">▶ 播放剪辑视频</button>
+        <!-- 视频与图片阅览区占据同一位置，默认显示图片，点击按钮切换 -->
+        <div class="game-video" id="game-video" hidden></div>
+        <div class="ip-viewer" id="game-viewer">
+          <div class="ip-main">
+            <div class="ip-track" id="game-track"></div>
+            <button class="ip-arrow ip-arrow--prev" id="game-prev" type="button" aria-label="上一张">‹</button>
+            <button class="ip-arrow ip-arrow--next" id="game-next" type="button" aria-label="下一张">›</button>
+          </div>
+          <div class="ip-thumbs" id="game-thumbs"></div>
+        </div>
+      </div>
+      <aside class="game-info" id="game-desc"></aside>
     </div>
   </div>
 </div>
@@ -576,6 +895,267 @@ body {
  * 2. 点击热区 → 从点击位置扩散水波纹，然后延迟打开对应弹窗
  * 3. 点关闭按钮 / 点遮罩 / 按 ESC 均可关闭弹窗
  * ============================================================ */
+/* ============================================================
+ * Perlin 2D 噪声（供 AWaves 使用）
+ * ============================================================ */
+class Noise {
+  constructor(seed) {
+    this.grad3 = [
+      [1, 1, 0], [-1, 1, 0], [1, -1, 0], [-1, -1, 0],
+      [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
+      [0, 1, 1], [0, -1, 1], [0, 1, -1], [0, -1, -1]
+    ];
+    var p = [
+      151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225,
+      140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148,
+      247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32,
+      57, 177, 33, 88, 237, 149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175,
+      74, 165, 71, 134, 139, 48, 27, 166, 77, 146, 158, 231, 83, 111, 229, 122,
+      60, 211, 133, 230, 220, 105, 92, 41, 55, 46, 245, 40, 244, 102, 143, 54,
+      65, 25, 63, 161, 1, 216, 80, 73, 209, 76, 132, 187, 208, 89, 18, 169,
+      200, 196, 135, 130, 116, 188, 159, 86, 164, 100, 109, 198, 173, 186, 3, 64,
+      52, 217, 226, 250, 124, 123, 5, 202, 38, 147, 118, 126, 255, 82, 85, 212,
+      207, 206, 59, 227, 47, 16, 58, 17, 182, 189, 28, 42, 223, 183, 170, 213,
+      119, 248, 152, 2, 44, 154, 163, 70, 221, 153, 101, 155, 167, 43, 172, 9,
+      129, 22, 39, 253, 19, 98, 108, 110, 79, 113, 224, 232, 178, 185, 112, 104,
+      218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241,
+      81, 51, 145, 235, 249, 14, 239, 107, 49, 192, 214, 31, 181, 199, 106, 157,
+      184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254, 138, 236, 205, 93,
+      222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
+    ];
+    var s = Math.floor(seed * 65536);
+    if (s < 256) s |= s << 8;
+    this.perm = new Array(512);
+    this.permMod12 = new Array(512);
+    for (var i = 0; i < 256; i++) {
+      var v = (i & 1) ? (p[i] ^ (s & 255)) : (p[i] ^ ((s >> 8) & 255));
+      this.perm[i] = this.perm[i + 256] = v;
+      this.permMod12[i] = this.permMod12[i + 256] = v % 12;
+    }
+  }
+
+  fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  lerp(a, b, t) { return (1 - t) * a + t * b; }
+
+  grad2(hash, x, y) {
+    var g = this.grad3[hash];
+    return g[0] * x + g[1] * y;
+  }
+
+  perlin2(x, y) {
+    var X = Math.floor(x), Y = Math.floor(y);
+    x = x - X; y = y - Y;
+    X = X & 255; Y = Y & 255;
+    var p = this.perm, m = this.permMod12;
+    var n00 = this.grad2(m[X + p[Y]], x, y);
+    var n01 = this.grad2(m[X + p[Y + 1]], x, y - 1);
+    var n10 = this.grad2(m[X + 1 + p[Y]], x - 1, y);
+    var n11 = this.grad2(m[X + 1 + p[Y + 1]], x - 1, y - 1);
+    var u = this.fade(x);
+    return this.lerp(this.lerp(n00, n10, u), this.lerp(n01, n11, u), this.fade(y));
+  }
+}
+
+/* ============================================================
+ * AWaves 波浪线组件（自定义元素 <a-waves>）
+ * 网格密度、动画速度、鼠标扰动参数与原版保持一致
+ * ============================================================ */
+class AWaves extends HTMLElement {
+  connectedCallback() {
+    this.svg = this.querySelector('.js-svg');
+
+    this.mouse = {
+      x: -10, y: 0, lx: 0, ly: 0, sx: 0, sy: 0,
+      v: 0, vs: 0, a: 0, set: false
+    };
+
+    this.lines = [];
+    this.paths = [];
+    this.noise = new Noise(Math.random());
+
+    this.setSize();
+    this.setLines();
+    this.bindEvents();
+
+    requestAnimationFrame(this.tick.bind(this));
+  }
+
+  bindEvents() {
+    window.addEventListener('resize', this.onResize.bind(this));
+    window.addEventListener('mousemove', this.onMouseMove.bind(this));
+    // 触摸监听挂到 window，保证组件 pointer-events:none 时移动端依然生效
+    window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+  }
+
+  onResize() {
+    this.setSize();
+    this.setLines();
+  }
+
+  onMouseMove(e) {
+    this.updateMousePosition(e.pageX, e.pageY);
+  }
+
+  onTouchMove(e) {
+    e.preventDefault();
+    var touch = e.touches[0];
+    this.updateMousePosition(touch.clientX, touch.clientY);
+  }
+
+  updateMousePosition(x, y) {
+    var mouse = this.mouse;
+    mouse.x = x - this.bounding.left;
+    mouse.y = y - this.bounding.top + window.scrollY;
+
+    if (!mouse.set) {
+      mouse.sx = mouse.x;
+      mouse.sy = mouse.y;
+      mouse.lx = mouse.x;
+      mouse.ly = mouse.y;
+      mouse.set = true;
+    }
+  }
+
+  setSize() {
+    this.bounding = this.getBoundingClientRect();
+    this.svg.style.width = this.bounding.width + 'px';
+    this.svg.style.height = this.bounding.height + 'px';
+  } 
+
+  setLines() {
+    var width = this.bounding.width;
+    var height = this.bounding.height;
+
+    this.lines = [];
+    this.paths.forEach(function (path) { path.remove(); });
+    this.paths = [];
+
+    var xGap = 20;
+    var yGap = 32;
+    var oWidth = width + 200;
+    var oHeight = height + 30;
+    var totalLines = Math.ceil(oWidth / xGap);
+    var totalPoints = Math.ceil(oHeight / yGap);
+    var xStart = (width - xGap * totalLines) / 2;
+    var yStart = (height - yGap * totalPoints) / 2;
+
+    for (var i = 0; i <= totalLines; i++) {
+      var points = [];
+      for (var j = 0; j <= totalPoints; j++) {
+        var point = {
+          x: xStart + xGap * i,
+          y: yStart + yGap * j,
+          wave: { x: 0, y: 0 },
+          cursor: { x: 0, y: 0, vx: 0, vy: 0 }
+        };
+        points.push(point);
+      }
+
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.classList.add('a__line');
+      path.classList.add('js-line');
+      this.svg.appendChild(path);
+      this.paths.push(path);
+      this.lines.push(points);
+    }
+  }
+
+  movePoints(time) {
+    var lines = this.lines;
+    var mouse = this.mouse;
+    var noise = this.noise;
+
+    lines.forEach(function (points) {
+      points.forEach(function (p) {
+        var move = noise.perlin2(
+          (p.x + time * 0.0125) * 0.002,
+          (p.y + time * 0.005) * 0.0015
+        ) * 12;
+        p.wave.x = Math.cos(move) * 12;
+        p.wave.y = Math.sin(move) * 16;
+
+        var dx = p.x - mouse.sx;
+        var dy = p.y - mouse.sy;
+        var d = Math.hypot(dx, dy);
+        var l = Math.max(175, mouse.vs);
+
+        if (d < l) {
+          var s = 1 - d / l;
+          var f = Math.cos(d * 0.001) * s;
+          p.cursor.vx += Math.cos(mouse.a) * f * l * mouse.vs * 0.00065;
+          p.cursor.vy += Math.sin(mouse.a) * f * l * mouse.vs * 0.00065;
+        }
+
+        p.cursor.vx += (0 - p.cursor.x) * 0.005;
+        p.cursor.vy += (0 - p.cursor.y) * 0.005;
+        p.cursor.vx *= 0.925;
+        p.cursor.vy *= 0.925;
+        p.cursor.x += p.cursor.vx * 2;
+        p.cursor.y += p.cursor.vy * 2;
+        p.cursor.x = Math.min(100, Math.max(-100, p.cursor.x));
+        p.cursor.y = Math.min(100, Math.max(-100, p.cursor.y));
+      });
+    });
+  }
+
+  moved(point, withCursorForce) {
+    if (withCursorForce === undefined) withCursorForce = true;
+    var coords = {
+      x: point.x + point.wave.x + (withCursorForce ? point.cursor.x : 0),
+      y: point.y + point.wave.y + (withCursorForce ? point.cursor.y : 0)
+    };
+    coords.x = Math.round(coords.x * 10) / 10;
+    coords.y = Math.round(coords.y * 10) / 10;
+    return coords;
+  }
+
+  drawLines() {
+    var lines = this.lines;
+    var paths = this.paths;
+    var moved = this.moved.bind(this);
+
+    lines.forEach(function (points, lIndex) {
+      var p1 = moved(points[0], false);
+      var d = 'M ' + p1.x + ' ' + p1.y;
+
+      points.forEach(function (p, pIndex) {
+        var isLast = pIndex === points.length - 1;
+        var c = moved(p, !isLast);
+        d += 'L ' + c.x + ' ' + c.y;
+      });
+
+      paths[lIndex].setAttribute('d', d);
+    });
+  }
+
+  tick(time) {
+    var mouse = this.mouse;
+
+    mouse.sx += (mouse.x - mouse.sx) * 0.1;
+    mouse.sy += (mouse.y - mouse.sy) * 0.1;
+
+    var dx = mouse.x - mouse.lx;
+    var dy = mouse.y - mouse.ly;
+    var d = Math.hypot(dx, dy);
+    mouse.v = d;
+    mouse.vs += (d - mouse.vs) * 0.1;
+    mouse.vs = Math.min(100, mouse.vs);
+    mouse.lx = mouse.x;
+    mouse.ly = mouse.y;
+    mouse.a = Math.atan2(dy, dx);
+
+    this.style.setProperty('--x', mouse.sx + 'px');
+    this.style.setProperty('--y', mouse.sy + 'px');
+
+    this.movePoints(time);
+    this.drawLines();
+
+    requestAnimationFrame(this.tick.bind(this));
+  }
+}
+
+customElements.define('a-waves', AWaves);
+
 (function () {
   "use strict";
 
@@ -591,91 +1171,29 @@ body {
     });
   });
 
-  /* ---------- 水波纹 Canvas 系统 ---------- */
+  /* ---------- 水波纹 DOM 系统 ---------- */
   var stage = document.getElementById("stage");
-  var rippleCanvas = document.getElementById("ripple-canvas");
-  var rctx = rippleCanvas.getContext("2d");
+  var rippleLayer = document.getElementById("ripple-layer");
 
-  var dpr = Math.max(1, window.devicePixelRatio || 1);
-  var ripples = [];
-  var rippleRafId = null;
-
-  function resizeRippleCanvas() {
-    var rect = stage.getBoundingClientRect();
-    rippleCanvas.width = Math.round(rect.width * dpr);
-    rippleCanvas.height = Math.round(rect.height * dpr);
-    rippleCanvas.style.width = rect.width + "px";
-    rippleCanvas.style.height = rect.height + "px";
-    rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  window.addEventListener("resize", resizeRippleCanvas);
-  resizeRippleCanvas();
-
-  function addRipple(clientX, clientY) {
+  function spawnRipple(clientX, clientY) {
     var rect = stage.getBoundingClientRect();
     var x = clientX - rect.left;
     var y = clientY - rect.top;
+    // 波纹直径设为舞台最大边的一半，足够覆盖整个舞台，扩散效果明显
+    var size = Math.max(rect.width, rect.height) * 0.5;
 
-    ripples.push({
-      x: x,
-      y: y,
-      start: performance.now(),
-      duration: 850,
-      maxR: Math.max(rect.width, rect.height) * 0.5
+    var dot = document.createElement("span");
+    dot.className = "ripple-dot";
+    dot.style.setProperty("--x", x + "px");
+    dot.style.setProperty("--y", y + "px");
+    dot.style.setProperty("--size", size + "px");
+
+    rippleLayer.appendChild(dot);
+
+    // 动画结束后移除 DOM 节点，避免累积
+    dot.addEventListener("animationend", function () {
+      dot.remove();
     });
-
-    if (!rippleRafId) {
-      rippleRafId = requestAnimationFrame(drawRipples);
-    }
-  }
-
-  function drawRipples(now) {
-    var cssW = rippleCanvas.clientWidth;
-    var cssH = rippleCanvas.clientHeight;
-
-    rctx.clearRect(0, 0, cssW, cssH);
-
-    var alive = false;
-    var nextRipples = [];
-
-    for (var i = 0; i < ripples.length; i++) {
-      var r = ripples[i];
-      var t = (now - r.start) / r.duration;
-
-      if (t >= 1) continue;
-
-      alive = true;
-      nextRipples.push(r);
-
-      // easeOutCubic：让涟漪从快到慢扩散
-      var p = 1 - Math.pow(1 - t, 3);
-      var radius = p * r.maxR;
-      var alpha = (1 - t) * 0.85;
-
-      // 外圈：白色高亮
-      rctx.beginPath();
-      rctx.arc(r.x, r.y, radius, 0, Math.PI * 2);
-      rctx.strokeStyle = "rgba(255, 255, 255, " + alpha.toFixed(3) + ")";
-      rctx.lineWidth = 3.5 - t * 2;
-      rctx.stroke();
-
-      // 内圈：淡蓝色，更有水感
-      rctx.beginPath();
-      rctx.arc(r.x, r.y, radius * 0.7, 0, Math.PI * 2);
-      rctx.strokeStyle = "rgba(180, 220, 255, " + (alpha * 0.45).toFixed(3) + ")";
-      rctx.lineWidth = 6 - t * 4;
-      rctx.stroke();
-    }
-
-    ripples = nextRipples;
-
-    if (alive) {
-      rippleRafId = requestAnimationFrame(drawRipples);
-    } else {
-      rippleRafId = null;
-      rctx.clearRect(0, 0, cssW, cssH);
-    }
   }
 
   /* ---------- 弹窗开关 ---------- */
@@ -689,14 +1207,22 @@ body {
   // 点击热区：按下时产生水波纹，松开后延迟打开对应弹窗
   document.querySelectorAll(".hotspot").forEach(function (hotspot) {
     hotspot.addEventListener("pointerdown", function (e) {
-      addRipple(e.clientX, e.clientY);
+      spawnRipple(e.clientX, e.clientY);
     });
 
     hotspot.addEventListener("click", function () {
+      // 点击反馈：对应物件轻微放大回弹
+      var layer = document.getElementById(hotspot.dataset.target);
+      if (layer) {
+        layer.classList.remove("tap-pop");
+        void layer.offsetWidth; // 强制重排，连续点击可重新触发动画
+        layer.classList.add("tap-pop");
+      }
+
       var modalId = hotspot.dataset.modal;
       setTimeout(function () {
         openModal(modalId);
-      }, 200);
+      }, 150); // 延迟 150ms，让水波纹先扩散出一小段
     });
   });
 
@@ -741,10 +1267,11 @@ body {
     });
   }
 
-  // ESC 关闭当前打开的弹窗
+  // ESC 关闭最上层弹窗（游戏详情叠在列表之上时，只先关详情）
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
-    document.querySelectorAll(".modal:not([hidden])").forEach(closeModal);
+    var openModals = document.querySelectorAll(".modal:not([hidden])");
+    if (openModals.length) closeModal(openModals[openModals.length - 1]);
   });
 
   /* ============================================================
@@ -850,6 +1377,244 @@ body {
   document.getElementById("ip-next").addEventListener("click", function () {
     switchIP(ipCurrent + 1);
   });
+})();
+</script>
+
+<script>
+/* ============================================================
+ * 游戏自研 / 字体设计 / 插画 板块逻辑
+ * 游戏：modal-2 渲染 4 张项目卡片，点击唤起统一详情弹窗 modal-game
+ *       （名称 + tag 标签 + 描述 + 截图滑动列表 + B 站内嵌视频）
+ * 字体：modal-5 共 2 页，分页控件切换
+ * 插画：modal-4 自动探测 1.png、2.png…… 直接展示图片列表
+ * ============================================================ */
+(function () {
+  "use strict";
+
+  var GAME_IMG_BASE = "assets/art/游戏/";
+
+  var GAME_PROJECTS = [
+    {
+      id: "fireworks",
+      name: "岁岁烟火铺",
+      tag: "模拟经营 / 江西烟花 / 文旅合作",
+      desc: "·独立完成店铺场景、烟花道具、人物立绘、抽卡动画、UI全套视觉设计，制定项目色彩规范。\n·结合江西非遗烟花文化打造视觉体系，项目落地文旅合作。",
+      cover: "Firework/cover.png",
+      screenshots: ["Firework/1.png", "Firework/2.png", "Firework/3.png", "Firework/4.png"],
+      videoUrl: "BV1sPNG6oEH3"
+    },
+    {
+      id: "tide",
+      name: "潮痕",
+      tag: "Godot / 2D / 探索解谜",
+      desc: "·承担美术工作：解谜场景原画、对话头像、交互拖拽道具、章节界面UI。\n·设计拖拽推理交互专属视觉反馈、线索道具图标体系，完整输出引擎适配的分层美术资源。",
+      cover: "Tide/cover.png",
+      screenshots: ["Tide/1.png", "Tide/2.png", "Tide/3.png", "Tide/4.png", "Tide/5.png"],
+      videoUrl: "BV1yPNG6dESj"
+    },
+    {
+      id: "canteen",
+      name: "灵啵食堂",
+      tag: "Unity / UGF / 模拟经营",
+      desc: "·搭建治愈系食堂美术规范，完成烹饪流水线（切配/榨汁/混合）道具、餐食半成品、食堂场景原画。\n·设计San值精神系统配套情绪视觉特效、多结局差异化场景氛围图，适配分支叙事画面表达。",
+      cover: "LimboCanteen/cover.png",
+      screenshots: ["LimboCanteen/1.png", "LimboCanteen/2.png", "LimboCanteen/3.png", "LimboCanteen/4.png", "LimboCanteen/5.png", "LimboCanteen/6.png"],
+      videoUrl: "BV1ynNu6EEzE"
+    },
+    {
+      id: "ld59",
+      name: "忆波",
+      tag: "Game Jam / 叙事 / 跑酷",
+      desc: "产出游戏场景原画、过场动画、游戏UI，适配双频段信号切换核心玩法视觉表现。72小时极限开发参赛，最终千余支队伍中排名38。",
+      cover: "Signal/cover.png",
+      screenshots: ["Signal/1.png", "Signal/2.png", "Signal/3.png", "Signal/4.png"],
+      videoUrl: "BV1PnNu6EE5"
+    }
+  ];
+
+  /* 把 "a / b / c" 形式的 tag 字符串渲染成标签 chip，追加到容器 */
+  function renderTags(container, tagStr) {
+    container.innerHTML = "";
+    tagStr.split("/").forEach(function (t) {
+      var chip = document.createElement("span");
+      chip.className = "tag-chip";
+      chip.textContent = t.trim();
+      container.appendChild(chip);
+    });
+  }
+
+  /* ---------- 游戏列表卡片（modal-2） ---------- */
+  var gameGrid = document.getElementById("game-grid");
+  GAME_PROJECTS.forEach(function (game) {
+    var card = document.createElement("div");
+    card.className = "game-card";
+
+    var cover = document.createElement("img");
+    cover.className = "game-card-cover";
+    cover.src = GAME_IMG_BASE + game.cover;
+    cover.alt = game.name;
+
+    var body = document.createElement("div");
+    body.className = "game-card-body";
+    var name = document.createElement("div");
+    name.className = "game-card-name";
+    name.textContent = game.name;
+    var tags = document.createElement("div");
+    tags.className = "game-card-tags";
+    renderTags(tags, game.tag);
+
+    body.appendChild(name);
+    body.appendChild(tags);
+    card.appendChild(cover);
+    card.appendChild(body);
+    card.addEventListener("click", function () { openGame(game); });
+    gameGrid.appendChild(card);
+  });
+
+  /* ---------- 游戏详情弹窗（modal-game） ---------- */
+  var gameModal = document.getElementById("modal-game");
+  var gameTitle = document.getElementById("game-title");
+  var gameTags = document.getElementById("game-tags");
+  var gameDesc = document.getElementById("game-desc");
+  var gameVideo = document.getElementById("game-video");
+  var gameViewer = document.getElementById("game-viewer");
+  var gameVideoToggle = document.getElementById("game-video-toggle");
+  var gameTrack = document.getElementById("game-track");
+  var gameThumbs = document.getElementById("game-thumbs");
+  var gameImages = [];
+  var gameCurrent = 0;
+  var currentVideoUrl = "";   // 当前打开项目的 BV 号
+  var videoOn = false;        // 视频区是否正在显示
+
+  // 截图滑动切换：轨道 translateX + 缩略图高亮（与 IP 阅览区同一套交互）
+  function showGameImage(index) {
+    if (!gameImages.length) return;
+    gameCurrent = (index + gameImages.length) % gameImages.length; // 首尾循环
+    gameTrack.style.transform = "translateX(-" + gameCurrent * 100 + "%)";
+    gameThumbs.querySelectorAll("img").forEach(function (thumb, i) {
+      thumb.classList.toggle("active", i === gameCurrent);
+    });
+  }
+
+  function openGame(game) {
+    gameTitle.textContent = game.name;
+    renderTags(gameTags, game.tag);
+
+    gameDesc.innerHTML = "";
+    game.desc.split("\n").forEach(function (line) {
+      var p = document.createElement("p");
+      p.textContent = line;
+      gameDesc.appendChild(p);
+    });
+
+    // 记录 BV 号，重置回图片模式：视频等点击按钮时才创建 iframe
+    currentVideoUrl = game.videoUrl;
+    videoOn = false;
+    gameVideo.innerHTML = "";
+    gameVideo.hidden = true;
+    gameViewer.hidden = false;
+    gameVideoToggle.textContent = "▶ 播放剪辑视频";
+
+    // 依次加载对应 screenshots 截图列表
+    gameTrack.innerHTML = "";
+    gameThumbs.innerHTML = "";
+    gameImages = game.screenshots.map(function (s) { return GAME_IMG_BASE + s; });
+    gameImages.forEach(function (src, i) {
+      var slide = document.createElement("img");
+      slide.src = src;
+      slide.alt = game.name + " 截图 " + (i + 1);
+      gameTrack.appendChild(slide);
+
+      var thumb = document.createElement("img");
+      thumb.src = src;
+      thumb.alt = String(i + 1);
+      thumb.addEventListener("click", function () { showGameImage(i); });
+      gameThumbs.appendChild(thumb);
+    });
+    showGameImage(0);
+
+    gameModal.hidden = false;
+  }
+
+  /* 视频按钮：点击后在原先放图片的位置切换 视频 / 截图 */
+  gameVideoToggle.addEventListener("click", function () {
+    videoOn = !videoOn;
+    if (videoOn) {
+      if (!gameVideo.innerHTML) {
+        gameVideo.innerHTML =
+          '<iframe src="https://player.bilibili.com/player.html?bvid=' + currentVideoUrl +
+          '&autoplay=0" scrolling="no" frameborder="no" allowfullscreen="true"></iframe>';
+      }
+      gameVideo.hidden = false;
+      gameViewer.hidden = true;
+      gameVideoToggle.textContent = "← 返回游戏截图";
+    } else {
+      gameVideo.hidden = true;
+      gameViewer.hidden = false;
+      gameVideoToggle.textContent = "▶ 播放剪辑视频";
+    }
+  });
+
+  document.getElementById("game-prev").addEventListener("click", function () {
+    showGameImage(gameCurrent - 1);
+  });
+  document.getElementById("game-next").addEventListener("click", function () {
+    showGameImage(gameCurrent + 1);
+  });
+
+  // 详情弹窗关闭时移除播放器 iframe，停止视频与声音
+  new MutationObserver(function () {
+    if (gameModal.hidden) gameVideo.innerHTML = "";
+  }).observe(gameModal, { attributes: true, attributeFilter: ["hidden"] });
+
+  /* ---------- 字体设计（modal-5）：与 IP 设计一致的滑动切换 + 缩略图 ---------- */
+  var fontImages = ["assets/art/字体设计/1.png", "assets/art/字体设计/2.png"];
+  var fontTrack = document.getElementById("font-track");
+  var fontThumbs = document.getElementById("font-thumbs");
+  var fontCurrent = 0;
+
+  function showFontPage(index) {
+    fontCurrent = (index + fontImages.length) % fontImages.length; // 首尾循环
+    fontTrack.style.transform = "translateX(-" + fontCurrent * 100 + "%)";
+    fontThumbs.querySelectorAll("img").forEach(function (thumb, i) {
+      thumb.classList.toggle("active", i === fontCurrent);
+    });
+  }
+
+  // 初始化：把 2 页图片放进轨道和缩略图条
+  fontImages.forEach(function (src, i) {
+    var slide = document.createElement("img");
+    slide.src = src;
+    slide.alt = "字体设计 第" + (i + 1) + "页";
+    fontTrack.appendChild(slide);
+
+    var thumb = document.createElement("img");
+    thumb.src = src;
+    thumb.alt = i + 1;
+    thumb.addEventListener("click", function () { showFontPage(i); });
+    fontThumbs.appendChild(thumb);
+  });
+  showFontPage(0);
+
+  document.getElementById("font-prev").addEventListener("click", function () { showFontPage(fontCurrent - 1); });
+  document.getElementById("font-next").addEventListener("click", function () { showFontPage(fontCurrent + 1); });
+
+  /* ---------- 插画（modal-4）：与 IP 相同的探测式加载，有几张展示几张 ---------- */
+  var illusList = document.getElementById("illus-list");
+  (function loadIllus(n) {
+    var probe = new Image();
+    probe.onload = function () {
+      var img = document.createElement("img");
+      img.src = "assets/art/插画/" + n + ".png";
+      img.alt = "插画 " + n;
+      illusList.appendChild(img);
+      loadIllus(n + 1);
+    };
+    probe.onerror = function () {
+      // 编号中断 = 插画已全部加载完
+    };
+    probe.src = "assets/art/插画/" + n + ".png";
+  })(1);
 })();
 </script>
 </body>

@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">
-  <rect width="400" height="260" fill="#f2b8a0"/>
-  <rect x="260" y="30" width="110" height="110" rx="20" fill="#e89a78"/>
-  <rect x="30" y="150" width="180" height="18" rx="9" fill="#ffffff" opacity="0.85"/>
-  <rect x="30" y="180" width="120" height="14" rx="7" fill="#ffffff" opacity="0.6"/>
-  <text x="30" y="70" font-family="sans-serif" font-size="34" font-weight="bold" fill="#ffffff">作品 02</text>
-</svg>
