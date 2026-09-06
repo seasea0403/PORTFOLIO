@@ -22,36 +22,32 @@
  * ============================================================ */
 :root {
   /* 字号 */
-  --fs-heading: 72px;   /* 弹窗大标题 chip */
-  --fs-card-name: 56px; /* 游戏卡片上的项目名称 */
-  --fs-body: 44px;      /* 正文/项目描述 */
-  --fs-tag: 36px;       /* 标签 chip */
-  --fs-toggle: 34px;    /* 「播放剪辑视频」切换按钮 */
-  --fs-btn: 44px;       /* 圆形按钮（关闭/上下切换/箭头）里的符号 */
+  --fs-heading: 26px;   /* 弹窗大标题 chip */
+  --fs-card-name: 20px; /* 游戏卡片上的项目名称 */
+  --fs-body: 15px;      /* 正文/项目描述 */
+  --fs-tag: 13px;       /* 标签 chip */
+  --fs-toggle: 15px;    /* 「播放剪辑视频」切换按钮 */
+  --fs-btn: 22px;       /* 关闭/切换按钮里的符号 */
 
-  /* 弹窗尺寸 */
-  --modal-base-width: 3784px;        /* 通用弹窗宽度上限 */
-  --modal-base-max-h: 95vh;          /* 通用弹窗高度上限 */
-  --modal-ip-width: 3784px;          /* IP 设计弹窗 */
-  --modal-game-list-width: 3784px;    /* 游戏项目列表弹窗（modal-2） */
-  --modal-game-detail-width: 3784px;  /* 游戏详情弹窗（modal-game） */
-  --modal-app-width: 2500px;         /* APP 设计弹窗宽度 */
-  --modal-app-height: 95vh;          /* APP 设计弹窗高度上限 */
-  --modal-font-width: 3200px;         /* 字体设计弹窗 */
-  --modal-illus-width: 3600px;        /* 插画弹窗 */
+  /* 弹窗尺寸：宽度上限 + 高度上限，按真实屏幕适配 */
+  --modal-base-width: 1200px;         /* 通用弹窗宽度上限 */
+  --modal-base-max-h: 90vh;           /* 通用弹窗高度上限 */
+  --modal-ip-width: 1200px;           /* IP 设计弹窗 */
+  --modal-game-list-width: 1200px;    /* 游戏项目列表弹窗（modal-2） */
+  --modal-game-detail-width: 1200px;  /* 游戏详情弹窗（modal-game） */
+  --modal-app-width: 1300px;          /* APP 设计弹窗宽度 */
+  --modal-font-width: 960px;          /* 字体设计弹窗 */
+  --modal-illus-width: 1000px;        /* 插画弹窗 */
 
   /* 局部缩放调节（手动微调） */
-  --app-phone-base-w: 560px; /* APP 手机框基准宽度 */
-  --app-phone-scale: 1.5;    /* APP 手机框缩放：1=原尺寸，<1 缩小，>1 放大 */
+  --app-phone-base-w: 300px; /* APP 手机框基准宽度 */
+  --app-phone-scale: 1;      /* APP 手机框缩放：1=原尺寸，<1 缩小，>1 放大 */
   --ip-image-scale: 1;      /* IP/游戏/字体大图缩放：1=原尺寸，<1 缩小，>1 放大 */
 
-  /* APP 画廊图片列数/间距/缩放 */
-  --app-gallery-columns: 4;      /* APP 截图每行显示几张（数字越小，单张越大） */
-  --app-gallery-gap: 10px;       /* APP 截图之间的间距 */
-  --app-gallery-img-scale: 0.5;    /* APP 截图额外缩放（1=原尺寸，<1 缩小，>1 放大） */
-
-  /* 关闭/切换按钮符号字号 */
-  --fs-btn: 72px;       /* 圆形按钮（关闭/箭头）里的符号大小 */
+  /* APP 画廊图片大小/间距 */
+  --app-gallery-thumb-w: 150px;  /* APP 截图单张宽度（高度按 3:4 自动） */
+  --app-gallery-gap: 14px;       /* APP 截图之间的间距 */
+  --app-cols-gap: 28px;          /* APP 手机与右侧内容之间的间距 */
 }
 
 body {
@@ -150,7 +146,7 @@ a-waves svg {
 a-waves svg path {
   fill: none;
   stroke: #ffffff;
-  stroke-width: 1px;
+  stroke-width: 0.5px; /* 线细一点 */
 }
 
 /* ---------- 水波纹 DOM 层 ---------- */
@@ -223,12 +219,12 @@ a-waves svg path {
 
 .modal-panel {
   position: relative;
-  width: min(var(--modal-base-width), 97vw); /* 宽度上限由 --modal-base-width 控制 */
-  max-height: var(--modal-base-max-h);       /* 高度上限由 --modal-base-max-h 控制 */
+  width: min(var(--modal-base-width), 94vw); /* 宽度上限由 --modal-base-width 控制 */
+  max-height: var(--modal-base-max-h);        /* 高度上限由 --modal-base-max-h 控制 */
   overflow-y: auto;
-  padding: 56px;
+  padding: 32px;
   background: #ffffff;
-  border-radius: 28px;
+  border-radius: 20px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   animation: pop 0.25s ease;
 }
@@ -238,8 +234,8 @@ a-waves svg path {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
-  margin-bottom: 32px;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 .modal-head .modal-heading { margin-bottom: 0; }
 .modal-close--inline {
@@ -247,26 +243,22 @@ a-waves svg path {
   flex-shrink: 0;
 }
 
-/* 按弹窗 ID 单独覆盖宽度/高度（无覆盖就沿用 --modal-base-*） */
+/* 按弹窗 ID 单独覆盖宽度（无覆盖就沿用 --modal-base-*） */
 .modal-panel.ip-panel { --modal-base-width: var(--modal-ip-width); }
 #modal-2 .modal-panel { --modal-base-width: var(--modal-game-list-width); }
 #modal-game .modal-panel { --modal-base-width: var(--modal-game-detail-width); }
-#modal-3 .modal-panel {
-  --modal-base-width: var(--modal-app-width);
-  --modal-base-max-h: var(--modal-app-height);
-}
+#modal-3 .modal-panel { --modal-base-width: var(--modal-app-width); }
 #modal-4 .modal-panel { --modal-base-width: var(--modal-illus-width); }
 #modal-5 .modal-panel { --modal-base-width: var(--modal-font-width); }
 
-/* IP 弹窗保留右上角绝对定位的关闭+切换按钮，关闭按钮高度也减半 */
+/* IP 弹窗保留右上角绝对定位的关闭+切换按钮 */
 .modal-panel.ip-panel {
-  padding-top: 120px;
+  padding-top: 80px;
   background: transparent;
 }
 .modal-panel.ip-panel .modal-close {
-  width: 160px;
-  height: 80px;
-  font-size: 40px;
+  width: 44px;
+  height: 44px;
 }
 /* IP 主题底色提高不透明度，与其余弹窗的白色面板观感统一 */
 .ip-panel.ip-theme-blue { background: rgba(207, 230, 247, 0.95); }
@@ -281,33 +273,33 @@ a-waves svg path {
 /* 五类弹窗共用的标题 chip 样式（与 ip-title 基础参数一致） */
 .modal-heading {
   display: inline-block;
-  padding: 18px 36px;
-  margin-bottom: 28px;
+  padding: 10px 22px;
+  margin-bottom: 20px;
   font-size: var(--fs-heading);
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   color: #3a3226;
   background: #cfe6f7; /* 贴合整站蓝色主调 */
-  border-radius: 18px;
+  border-radius: 12px;
 }
 
 /* 五类弹窗共用的标签 chip 样式 */
 .tag-chip {
   display: inline-block;
-  padding: 10px 24px;
+  padding: 6px 14px;
   font-size: var(--fs-tag);
   color: #4a6a8a;
   background: #ffffff;
-  border: 1.5px solid #d8e6f5;
+  border: 1px solid #d8e6f5;
   border-radius: 999px;
 }
 
 .modal-close {
   position: absolute;
-  top: 36px;
-  right: 36px;
-  width: 160px;
-  height: 160px;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
   border: none;
   border-radius: 50%;
   background: #f0f0f0;
@@ -323,8 +315,8 @@ a-waves svg path {
 /* 作品网格：2~3 列自适应，占位框后续替换为真实作品图 */
 .works-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
 }
 
 .work-slot {
@@ -343,19 +335,17 @@ a-waves svg path {
 
 .app-modal-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 560px) minmax(280px, 1fr);
-  gap: 40px;
-  align-items: start; /* 手机按自身宽高比自然显示，上下与右侧自然对齐 */
+  grid-template-columns: auto 1fr;
+  gap: var(--app-cols-gap);
+  align-items: stretch; /* 手机高度跟随右列，底部自然对齐 */
 }
 .app-phone-frame {
-  width: min(calc(var(--app-phone-base-w) * var(--app-phone-scale)), 100%);
-  height: auto;
-  max-width: calc(var(--app-phone-base-w) * var(--app-phone-scale));
-  aspect-ratio: 372 / 672; /* 与原手机比例一致，宽高一起缩放 */
-  border: 24px solid #222;
-  border-radius: 56px;
+  width: calc(var(--app-phone-base-w) * var(--app-phone-scale));
+  height: auto; /* 配合父级 stretch，自动填满行高，底部与右侧图片对齐 */
+  border: 10px solid #222;
+  border-radius: 28px;
   background: #111;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 20px 50px rgba(0,0,0,0.25);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 12px 30px rgba(0,0,0,0.25);
   overflow: hidden;
   touch-action: manipulation;
   cursor: pointer;
@@ -363,7 +353,7 @@ a-waves svg path {
 }
 .app-phone-frame.touched {
   transform: translateY(2px);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 14px 40px rgba(0,0,0,0.28);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.28);
 }
 .app-phone-frame iframe {
   width: 100%;
@@ -379,35 +369,34 @@ a-waves svg path {
   display: none;
 }
 .app-description {
-  padding: 36px 40px;
-  border-radius: 24px;
+  padding: 20px 24px;
+  border-radius: 16px;
   background: rgba(255,255,255,0.92);
 }
 .app-description .modal-heading {
   margin-top: 0;
 }
 .app-gallery {
-  margin-top: 32px;
+  margin-top: 20px;
 }
-/* 截图网格：列数/间距/缩放都由变量控制 */
+/* 截图网格：单张宽度/间距由变量控制，自动换行 */
 .app-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(var(--app-gallery-columns), 1fr);
+  grid-template-columns: repeat(auto-fill, var(--app-gallery-thumb-w));
+  justify-content: start;
   gap: var(--app-gallery-gap);
 }
 .app-gallery-grid img {
   width: 100%;
   display: block;
-  border-radius: 18px;
+  border-radius: 12px;
   object-fit: cover;
   aspect-ratio: 3 / 4;
-  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-  transform: scale(var(--app-gallery-img-scale));
-  transform-origin: center;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
 }
 .app-description p {
-  margin-bottom: 22px;
-  line-height: 1.9;
+  margin-bottom: 12px;
+  line-height: 1.8;
   font-size: var(--fs-body);
   color: #4a4d63;
 }
@@ -422,20 +411,20 @@ a-waves svg path {
 /* 右上角「上一个 / 下一个作品」切换按钮，挨着关闭按钮 */
 .ip-nav {
   position: absolute;
-  top: 36px;
-  right: 220px;
+  top: 20px;
+  right: 76px;
   display: flex;
-  gap: 16px;
+  gap: 10px;
   z-index: 3;
 }
 .ip-nav-btn {
-  width: 160px;
-  height: 80px;
+  padding: 0 16px;
+  height: 44px;
   border: none;
-  border-radius: 12px; /* 矩形底图，边缘轻微圆角 */
+  border-radius: 10px; /* 矩形底图，边缘轻微圆角 */
   background: #f0f0f0;
   color: #666;
-  font-size: 40px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -462,13 +451,13 @@ a-waves svg path {
 /* 模块标题栏：加粗 + 主题浅色底 */
 .ip-title {
   display: inline-block;
-  padding: 18px 36px;
-  margin-bottom: 28px;
+  padding: 10px 22px;
+  margin-bottom: 20px;
   font-size: var(--fs-heading);
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   color: #3a3226;
-  border-radius: 18px;
+  border-radius: 12px;
 }
 .ip-title--blue   { background: #cfe6f7; } /* 大连城市主题IP：浅蓝 */
 .ip-title--purple { background: #e3d9f2; } /* 清华建筑主题IP：淡紫 */
@@ -476,16 +465,16 @@ a-waves svg path {
 
 /* 模块主体：桌面端 2 列 = 图片阅览区 | 标题+描述 */
 .ip-module {
-  border-radius: 18px;
+  border-radius: 16px;
 }
 .ip-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.5fr);
-  gap: 40px;
-  margin-top: 24px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 28px;
+  margin-top: 16px;
   align-items: start;
-  padding: 36px;
-  border-radius: 28px;
+  padding: 20px;
+  border-radius: 20px;
   background: transparent;
 }
 
@@ -493,21 +482,21 @@ a-waves svg path {
 .ip-main {
   position: relative;
   background: #faf8f3;
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
-  min-height: 640px;
+  height: min(520px, 50vh);
 }
 .ip-track {
   display: flex;
   align-items: center;
-  min-height: 640px;
+  height: 100%;
   transition: transform 0.38s ease; /* 左右滑动效果 */
   will-change: transform;
 }
 .ip-track img {
   width: 100%;
   flex-shrink: 0;
-  max-height: 70vh;
+  max-height: 100%;
   object-fit: contain; /* 图片在视窗内居中自适应 */
   display: block;
   transform: scale(var(--ip-image-scale));
@@ -519,8 +508,8 @@ a-waves svg path {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 168px;
-  height: 168px;
+  width: 48px;
+  height: 48px;
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.85);
@@ -532,23 +521,23 @@ a-waves svg path {
   transition: background 0.15s ease;
 }
 .ip-arrow:hover { background: #ffffff; }
-.ip-arrow--prev { left: 36px; }
-.ip-arrow--next { right: 36px; }
+.ip-arrow--prev { left: 16px; }
+.ip-arrow--next { right: 16px; }
 
 /* 缩略图条：横向排列，超出可滚动 */
 .ip-thumbs {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
+  gap: 10px;
+  margin-top: 14px;
   overflow-x: auto;
   padding-bottom: 4px;
 }
 .ip-thumbs img {
-  width: 140px;
-  height: 140px;
+  width: 72px;
+  height: 72px;
   object-fit: cover;
-  border-radius: 16px;
+  border-radius: 10px;
   border: 2px solid transparent;
   cursor: pointer;
   flex-shrink: 0;
@@ -560,14 +549,14 @@ a-waves svg path {
 
 /* ----- 设计理念侧栏：对应标题的浅色 tint ----- */
 .ip-info {
-  padding: 24px 28px;
-  border-radius: 18px;
+  padding: 16px;
+  border-radius: 14px;
   width: 100%;
   background: transparent;
 }
 .ip-info p {
   font-size: var(--fs-body);
-  line-height: 1.9;
+  line-height: 1.8;
   color: #4a4d63;
 }
   .ip-info--blue,
@@ -576,9 +565,9 @@ a-waves svg path {
 
 /* ---------- 基础响应式：窄屏时弹窗收紧 ---------- */
 @media (max-width: 560px) {
-  .modal-panel { padding: 28px; }
-  .works-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .modal-heading, .ip-title { font-size: 36px; }
+  .modal-panel { padding: 20px; }
+  .works-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .modal-heading, .ip-title { font-size: 20px; }
 }
 
 /* ---------- iPad 平板宽度：IP 模块由 2 列切换为 1 列 ---------- */
@@ -586,7 +575,7 @@ a-waves svg path {
   .ip-body { grid-template-columns: 1fr; }
   /* 单列时顺序保持：标题 → 设计理念 → 图片 */
   .ip-info { order: -1; }
-  .ip-track img { max-height: 54vh; }
+  .ip-main { height: min(440px, 44vh); }
 }
 
 /* ============================================================
@@ -598,19 +587,19 @@ a-waves svg path {
 .game-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 42px;
+  gap: 24px;
 }
 .game-card {
   background: #faf8f3;
-  border-radius: 24px;
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .game-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16);
 }
 .game-card-cover {
   width: 100%;
@@ -618,29 +607,29 @@ a-waves svg path {
   object-fit: cover;
   display: block;
 }
-.game-card-body { padding: 26px 30px 28px; }
+.game-card-body { padding: 16px 18px 18px; }
 .game-card-name {
   font-size: var(--fs-card-name);
   font-weight: 700;
   letter-spacing: 1px;
   color: #3a3226;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
-.game-card-tags { display: flex; flex-wrap: wrap; gap: 14px; }
+.game-card-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* ---------- 游戏项目统一详情弹窗（modal-game，与列表同尺寸面板） ---------- */
-.game-tags { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 26px; }
+.game-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 .game-detail-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.5fr);
-  gap: 40px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
   align-items: start;
 }
 /* 视频切换按钮：点击后视频占满原图片阅览区的位置 */
 .game-video-toggle {
   display: inline-block;
-  margin-bottom: 20px;
-  padding: 14px 32px;
+  margin-bottom: 16px;
+  padding: 10px 20px;
   border: none;
   border-radius: 999px;
   background: #cfe6f7;
@@ -656,15 +645,15 @@ a-waves svg path {
 .game-video {
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
   background: #111;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 .game-video iframe { width: 100%; height: 100%; border: 0; display: block; }
 .game-info p {
-  margin-bottom: 20px;
-  line-height: 1.9;
+  margin-bottom: 12px;
+  line-height: 1.8;
   font-size: var(--fs-body);
   color: #4a4d63;
 }
@@ -672,13 +661,13 @@ a-waves svg path {
 /* ---------- 字体设计分页（modal-5）：复用 .ip-viewer / .ip-main / .ip-track / .ip-thumbs ---------- */
 
 /* ---------- 插画展示（modal-4）：纯图片列表 ---------- */
-.illus-list { display: flex; flex-direction: column; gap: 42px; }
+.illus-list { display: flex; flex-direction: column; gap: 24px; }
 .illus-list img {
   width: 100%;
   display: block;
-  border-radius: 20px;
+  border-radius: 14px;
   background: #faf8f3;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 /* 平板及以下：游戏详情由双列降为单列，游戏列表降为单列 */
@@ -792,7 +781,7 @@ a-waves svg path {
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
     <div class="modal-head">
-      <h3 class="modal-heading">游戏自研设计 · Game Visual</h3>
+      <h3 class="modal-heading">游戏美术设计</h3>
       <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
     </div>
     <div class="game-grid" id="game-grid"></div>
@@ -803,12 +792,12 @@ a-waves svg path {
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
     <div class="modal-head">
-      <h3 class="modal-heading">Troublemate / 旅行搭子</h3>
+      <h3 class="modal-heading">APP设计</h3>
       <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
     </div>
     <div class="app-modal-layout">
       <div class="app-phone-frame">
-        <iframe src="https://travelmate-production-1ad2.up.railway.app/" title="Troublemate App Preview" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+        <iframe src="https://travelmate-production-1ad2.up.railway.app/" title="TravelMate App Preview" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
       </div>
       <div class="app-description">
         <p>这是一个面向旅行规划和分账管理的辅助软件，支持行程规划、预算分摊、行程协同和出行提醒等功能。</p>
@@ -834,7 +823,7 @@ a-waves svg path {
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
     <div class="modal-head">
-      <h3 class="modal-heading">插画 · Illustration</h3>
+      <h3 class="modal-heading">插画</h3>
       <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
     </div>
     <div class="illus-list" id="illus-list"></div>
@@ -846,7 +835,7 @@ a-waves svg path {
   <div class="modal-backdrop" data-close></div>
   <div class="modal-panel" role="dialog" aria-modal="true">
     <div class="modal-head">
-      <h3 class="modal-heading">字体设计 · Font Design</h3>
+      <h3 class="modal-heading">字体设计</h3>
       <button class="modal-close modal-close--inline" type="button" data-close aria-label="关闭">×</button>
     </div>
     <div class="ip-viewer">
@@ -1030,8 +1019,8 @@ class AWaves extends HTMLElement {
     this.paths.forEach(function (path) { path.remove(); });
     this.paths = [];
 
-    var xGap = 20;
-    var yGap = 32;
+    var xGap = 7;   /* 横向线距：越小越密 */
+    var yGap = 11;  /* 纵向点距：越小线越绵密 */
     var oWidth = width + 200;
     var oHeight = height + 30;
     var totalLines = Math.ceil(oWidth / xGap);
@@ -1428,7 +1417,7 @@ customElements.define('a-waves', AWaves);
       desc: "产出游戏场景原画、过场动画、游戏UI，适配双频段信号切换核心玩法视觉表现。72小时极限开发参赛，最终千余支队伍中排名38。",
       cover: "Signal/cover.png",
       screenshots: ["Signal/1.png", "Signal/2.png", "Signal/3.png", "Signal/4.png"],
-      videoUrl: "BV1PnNu6EE5"
+      videoUrl: "BV1PnNu6EE5s"
     }
   ];
 
